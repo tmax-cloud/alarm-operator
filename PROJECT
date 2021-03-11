@@ -2,6 +2,13 @@ domain: my.domain
 layout: go.kubebuilder.io/v2
 projectName: alarm-operator
 repo: github.com/tmax-cloud/alarm-operator
+resources:
+- group: tmax.io
+  kind: Notification
+  version: v1alpha1
+- group: tmax.io
+  kind: NotificationTrigger
+  version: v1alpha1
 version: 3-alpha
 plugins:
   go.sdk.operatorframework.io/v2-alpha: {}

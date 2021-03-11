@@ -1,0 +1,7 @@
+apiVersion: tmax.io.my.domain/v1alpha1
+kind: Notification
+metadata:
+  name: notification-sample
+spec:
+  # Add fields here
+  foo: bar
