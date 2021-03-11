@@ -1,0 +1,12 @@
+apiVersion: tmax.io.my.domain/v1alpha1
+kind: Notification
+metadata:
+  name: email-notification-sample
+spec:
+  # Add fields here
+  email:
+    account: my-gmail-account
+    from: taejune_ahn@tmax.co.kr
+    to: taejune_ahn@tmax.co.kr
+    subject: "Notification from operator"
+    body: "Test message..."

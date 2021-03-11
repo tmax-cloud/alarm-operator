@@ -1,0 +1,11 @@
+apiVersion: tmax.io.my.domain/v1alpha1
+kind: Notification
+metadata:
+  name: slack-notification-sample
+spec:
+  # Add fields here
+  slack:
+    account: my-slack-account
+    workspace: hypercloud
+    channel: announcements
+    message: "Test message from alarm-operator"

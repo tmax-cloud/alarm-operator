@@ -1,0 +1,48 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - tmax.io.my.domain
+  resources:
+  - notifications
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tmax.io.my.domain
+  resources:
+  - notifications/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - tmax.io.my.domain
+  resources:
+  - notificationtriggers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tmax.io.my.domain
+  resources:
+  - notificationtriggers/status
+  verbs:
+  - get
+  - patch
+  - update

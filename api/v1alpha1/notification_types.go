@@ -23,13 +23,38 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type EmailNotification struct {
+	SenderAccountSecret string `json:"account"`
+	From                string `json:"from"`
+	To                  string `json:"to"`
+	Cc                  string `json:"cc,omitempty"`
+	Subject             string `json:"subject"`
+	Body                string `json:"body"`
+}
+
+type WebhookNotification struct {
+	Url     string `json:"url"`
+	Message string `json:"message"`
+}
+
+type SlackNotification struct {
+	SenderAccountSecret string `json:"account"`
+	Workspace           string `json:"workspace"`
+	Channel             string `json:"channel"`
+	Message             string `json:"message"`
+}
+
 // NotificationSpec defines the desired state of Notification
 type NotificationSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Notification. Edit Notification_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// +kubebuilder:validation:OneOf
+	Email EmailNotification `json:"email,omitempty"`
+	// +kubebuilder:validation:OneOf
+	Webhook WebhookNotification `json:"webhook,omitempty"`
+	// +kubebuilder:validation:OneOf
+	Slack SlackNotification `json:"slack,omitempty"`
 }
 
 // NotificationStatus defines the observed state of Notification
