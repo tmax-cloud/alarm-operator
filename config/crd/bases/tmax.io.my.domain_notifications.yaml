@@ -8,11 +8,17 @@ metadata:
   creationTimestamp: null
   name: notifications.tmax.io.my.domain
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.type
+    name: Action
+    type: string
   group: tmax.io.my.domain
   names:
     kind: Notification
     listKind: NotificationList
     plural: notifications
+    shortNames:
+    - ntr
     singular: notification
   scope: Namespaced
   subresources:
@@ -86,6 +92,12 @@ spec:
           type: object
         status:
           description: NotificationStatus defines the observed state of Notification
+          properties:
+            type:
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "make" to regenerate code after modifying
+                this file'
+              type: string
           type: object
       type: object
   version: v1alpha1

@@ -29,17 +29,20 @@ type NotificationTriggerSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of NotificationTrigger. Edit NotificationTrigger_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Notification string `json:"notification"`
 }
 
 // NotificationTriggerStatus defines the observed state of NotificationTrigger
 type NotificationTriggerStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	EndPoint string `json:"endpoint,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=ntr
+// +kubebuilder:printcolumn:name="Endpoint",type=string,JSONPath=`.status.endpoint`
 
 // NotificationTrigger is the Schema for the notificationtriggers API
 type NotificationTrigger struct {

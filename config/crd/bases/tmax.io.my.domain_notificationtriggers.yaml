@@ -8,11 +8,17 @@ metadata:
   creationTimestamp: null
   name: notificationtriggers.tmax.io.my.domain
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.endpoint
+    name: Endpoint
+    type: string
   group: tmax.io.my.domain
   names:
     kind: NotificationTrigger
     listKind: NotificationTriggerList
     plural: notificationtriggers
+    shortNames:
+    - ntr
     singular: notificationtrigger
   scope: Namespaced
   subresources:
@@ -37,13 +43,21 @@ spec:
         spec:
           description: NotificationTriggerSpec defines the desired state of NotificationTrigger
           properties:
-            foo:
+            notification:
               description: Foo is an example field of NotificationTrigger. Edit NotificationTrigger_types.go
                 to remove/update
               type: string
+          required:
+          - notification
           type: object
         status:
           description: NotificationTriggerStatus defines the observed state of NotificationTrigger
+          properties:
+            endpoint:
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "make" to regenerate code after modifying
+                this file'
+              type: string
           type: object
       type: object
   version: v1alpha1

@@ -23,6 +23,15 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type NotificationType string
+
+const (
+	NotificationTypeMail    NotificationType = "Email"
+	NotificationTypeWebhook NotificationType = "Webhook"
+	NotificationTypeSlack   NotificationType = "Slack"
+	NotificationTypeUnknown NotificationType = "Unknown"
+)
+
 type EmailNotification struct {
 	SenderAccountSecret string `json:"account"`
 	From                string `json:"from"`
@@ -61,10 +70,13 @@ type NotificationSpec struct {
 type NotificationStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Type NotificationType `json:"type,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=ntr
+// +kubebuilder:printcolumn:name="Action",type=string,JSONPath=`.status.type`
 
 // Notification is the Schema for the notifications API
 type Notification struct {

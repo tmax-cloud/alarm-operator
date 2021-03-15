@@ -3,5 +3,4 @@ kind: NotificationTrigger
 metadata:
   name: notificationtrigger-sample
 spec:
-  # Add fields here
-  foo: bar
+  notification: email-notification-sample

@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,12 +39,42 @@ type NotificationReconciler struct {
 // +kubebuilder:rbac:groups=tmax.io.my.domain,resources=notifications/status,verbs=get;update;patch
 
 func (r *NotificationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("notification", req.NamespacedName)
+	ctx := context.Background()
+	logger := r.Log.WithValues("notification", req.NamespacedName)
 
 	// your logic here
+	instance := &tmaxiov1alpha1.Notification{}
+	err := r.Client.Get(ctx, req.NamespacedName, instance)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
+	}
+
+	var action tmaxiov1alpha1.NotificationType
+	if &instance.Spec.Email != nil {
+		action = tmaxiov1alpha1.NotificationTypeMail
+	} else if &instance.Spec.Webhook != nil {
+		action = tmaxiov1alpha1.NotificationTypeWebhook
+	} else if &instance.Spec.Slack != nil {
+		action = tmaxiov1alpha1.NotificationTypeSlack
+	} else {
+		action = tmaxiov1alpha1.NotificationTypeUnknown
+	}
+
+	if err := r.updateStatus(instance, action); err != nil {
+		logger.Error(err, "Failed to update status")
+	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *NotificationReconciler) updateStatus(instance *tmaxiov1alpha1.Notification, action tmaxiov1alpha1.NotificationType) error {
+	original := instance.DeepCopy()
+	instance.Status.Type = action
+
+	return r.Client.Status().Patch(context.TODO(), instance, client.MergeFrom(original))
 }
 
 func (r *NotificationReconciler) SetupWithManager(mgr ctrl.Manager) error {
