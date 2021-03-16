@@ -28,7 +28,7 @@ spec:
         app: notification-server
     spec:
       containers:
-      - image: ko://github.com/tmax-cloud/alarm-operator/cmd/notifier/main.go
+      - image: ko://github.com/tmax-cloud/alarm-operator/pkg/notifier
         name: notification-server
         env:
         - name: REDIS_URL
