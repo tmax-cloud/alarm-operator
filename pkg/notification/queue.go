@@ -3,6 +3,7 @@ package notification
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -22,14 +23,14 @@ func (r *NotificationQueue) Enqueue(noti Notification) error {
 	}
 
 	switch noti.(type) {
-	case *MailNotification:
+	case MailNotification, *MailNotification:
 		payload = []byte(strings.Join([]string{"mail", string(payload)}, ":"))
-	case *WebhookNotification:
+	case WebhookNotification, *WebhookNotification:
 		payload = []byte(strings.Join([]string{"webhook", string(payload)}, ":"))
-	case *SlackNotification:
+	case SlackNotification, *SlackNotification:
 		payload = []byte(strings.Join([]string{"slack", string(payload)}, ":"))
 	default:
-		return fmt.Errorf("Cannot enqueue notification: Unknown type")
+		return fmt.Errorf(fmt.Sprintf("unsupported notification type: %s\n", reflect.TypeOf(noti)))
 	}
 
 	return r.ds.Push(payload)

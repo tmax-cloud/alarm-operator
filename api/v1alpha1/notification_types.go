@@ -75,7 +75,7 @@ type NotificationStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:shortName=ntr
+// +kubebuilder:resource:shortName=not
 // +kubebuilder:printcolumn:name="Action",type=string,JSONPath=`.status.type`
 
 // Notification is the Schema for the notifications API

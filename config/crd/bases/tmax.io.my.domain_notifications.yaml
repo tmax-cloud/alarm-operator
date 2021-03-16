@@ -18,7 +18,7 @@ spec:
     listKind: NotificationList
     plural: notifications
     shortNames:
-    - ntr
+    - not
     singular: notification
   scope: Namespaced
   subresources:

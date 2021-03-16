@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -111,7 +112,7 @@ func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 		// TODO:
 	}
 
-	if err := registry.Register(instance.Name, noti); err != nil {
+	if err := registry.Register(action.Name, noti); err != nil {
 		logger.Error(err, "Failed to register notification")
 		return ctrl.Result{}, err
 	}
@@ -126,10 +127,13 @@ func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 func (r *NotificationTriggerReconciler) updateStatus(instance *tmaxiov1alpha1.NotificationTrigger) error {
 	original := instance.DeepCopy()
 
-	id := instance.Spec.Notification
-	host := "notification-server:8080"
-	instance.Status.EndPoint = fmt.Sprintf("http://%s.%s", id, host)
+	ip, port, err := r.GetEndpoint()
+	if err != nil {
+		return err
+	}
 
+	id := instance.Spec.Notification
+	instance.Status.EndPoint = fmt.Sprintf("http://%s.%s.xip.io:%d", id, ip, port)
 	return r.Client.Status().Patch(context.TODO(), instance, client.MergeFrom(original))
 }
 
@@ -137,4 +141,48 @@ func (r *NotificationTriggerReconciler) SetupWithManager(mgr ctrl.Manager) error
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&tmaxiov1alpha1.NotificationTrigger{}).
 		Complete(r)
+}
+
+func (r *NotificationTriggerReconciler) GetEndpoint() (string, int32, error) {
+
+	ctx := context.Background()
+	logger := r.Log.WithValues("notification", "GetEndpoint")
+
+	instance := &corev1.Service{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "notifier", Namespace: "alarm-operator-system"}, instance)
+	if err != nil {
+		return "", 0, err
+	}
+
+	logger.Info("Got notifier service", "Type", instance.Spec.Type, "ClusterIP", instance.Spec.ClusterIP, "ExternalIPs",
+		instance.Spec.ExternalIPs, "Ports", instance.Spec.Ports)
+
+	var ip string
+	var port int32
+
+	switch instance.Spec.Type {
+	case corev1.ServiceTypeClusterIP:
+		ip = instance.Spec.ClusterIP
+	case corev1.ServiceTypeNodePort:
+		// FIXME:
+		ip = instance.Spec.ClusterIP
+	case corev1.ServiceTypeLoadBalancer:
+		// FIXME:
+		ip = instance.Spec.ClusterIP
+	case corev1.ServiceTypeExternalName:
+		// FIXME:
+		ip = instance.Spec.ClusterIP
+	default:
+		// FIXME:
+		ip = instance.Spec.ClusterIP
+	}
+
+	// FIXME:
+	for _, p := range instance.Spec.Ports {
+		if p.Name == "http" {
+			port = p.Port
+		}
+	}
+
+	return ip, port, nil
 }
