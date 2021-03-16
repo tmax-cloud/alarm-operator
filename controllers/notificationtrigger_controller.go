@@ -126,14 +126,12 @@ func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 
 func (r *NotificationTriggerReconciler) updateStatus(instance *tmaxiov1alpha1.NotificationTrigger) error {
 	original := instance.DeepCopy()
-
-	ip, port, err := r.GetEndpoint()
+	endpoint, err := r.GetEndpoint(instance.Spec.Notification)
 	if err != nil {
 		return err
 	}
 
-	id := instance.Spec.Notification
-	instance.Status.EndPoint = fmt.Sprintf("http://%s.%s.xip.io:%d", id, ip, port)
+	instance.Status.EndPoint = endpoint
 	return r.Client.Status().Patch(context.TODO(), instance, client.MergeFrom(original))
 }
 
@@ -143,19 +141,15 @@ func (r *NotificationTriggerReconciler) SetupWithManager(mgr ctrl.Manager) error
 		Complete(r)
 }
 
-func (r *NotificationTriggerReconciler) GetEndpoint() (string, int32, error) {
-
+func (r *NotificationTriggerReconciler) GetEndpoint(id string) (string, error) {
 	ctx := context.Background()
-	logger := r.Log.WithValues("notification", "GetEndpoint")
 
 	instance := &corev1.Service{}
+	// FIXME: Designate namespacename from variable
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "notifier", Namespace: "alarm-operator-system"}, instance)
 	if err != nil {
-		return "", 0, err
+		return "", err
 	}
-
-	logger.Info("Got notifier service", "Type", instance.Spec.Type, "ClusterIP", instance.Spec.ClusterIP, "ExternalIPs",
-		instance.Spec.ExternalIPs, "Ports", instance.Spec.Ports)
 
 	var ip string
 	var port int32
@@ -184,5 +178,5 @@ func (r *NotificationTriggerReconciler) GetEndpoint() (string, int32, error) {
 		}
 	}
 
-	return ip, port, nil
+	return fmt.Sprintf("http://%s.%s.xip.io:%d", id, ip, port), nil
 }
