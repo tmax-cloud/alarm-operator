@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-server
+spec:
+  selector:
+    app: notification-server
+  ports:
+  - protocol: TCP
+    port: 8080
+    # containerPort: 8080
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-server
+  labels:
+    app: notification-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-server
+  template:
+    metadata:
+      labels:
+        app: notification-server
+    spec:
+      containers:
+      - image: ko://github.com/tmax-cloud/alarm-operator/cmd/notifier/main.go
+        name: notification-server
+        env:
+        - name: REDIS_URL
+          value: redis://redis:6379/1
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        imagePullPolicy: Always
+      terminationGracePeriodSeconds: 10
