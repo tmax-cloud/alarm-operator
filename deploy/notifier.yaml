@@ -1,38 +1,33 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: notification-server
-spec:
-  selector:
-    app: notification-server
-  ports:
-  - protocol: TCP
-    port: 8080
-    # containerPort: 8080
-  type: NodePort
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: notification-server
+  name: notifier
+  namespace: alarm-operator-system
   labels:
-    app: notification-server
+    app: notifier
+    alarm.hypercloud.dev/release: devel
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: notification-server
+      app: notifier
   template:
     metadata:
       labels:
-        app: notification-server
+        app: notifier
     spec:
       containers:
-      - image: ko://github.com/tmax-cloud/alarm-operator/pkg/notifier
-        name: notification-server
+      - name: notifier
+        image: ko://github.com/tmax-cloud/alarm-operator/cmd/notifier
+        imagePullPolicy: Always
         env:
         - name: REDIS_URL
           value: redis://redis:6379/1
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8081
         resources:
           limits:
             cpu: 100m
@@ -40,5 +35,24 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
-        imagePullPolicy: Always
-      terminationGracePeriodSeconds: 10
+      terminationGracePeriodSeconds: 600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notifier
+  namespace: alarm-operator-system
+  labels:
+    app: notifier
+    alarm.hypercloud.dev/release: devel
+spec:
+  selector:
+    app: notifier
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  - name: https
+    port: 443
+    targetPort: 8081
+  type: ClusterIP
