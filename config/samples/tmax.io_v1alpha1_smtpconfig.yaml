@@ -6,4 +6,4 @@ spec:
   # Add fields here
   host: smtp.gmail.com
   port: 587
-  secret: mygmail
+  secret: tmaxcloud-announcer-credit
