@@ -1,0 +1,20 @@
+# permissions for end users to view smtpconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: smtpconfig-viewer-role
+rules:
+- apiGroups:
+  - tmax.io.my.domain
+  resources:
+  - smtpconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - tmax.io.my.domain
+  resources:
+  - smtpconfigs/status
+  verbs:
+  - get

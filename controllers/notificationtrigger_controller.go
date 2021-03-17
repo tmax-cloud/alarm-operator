@@ -63,7 +63,7 @@ type NotificationTriggerReconciler struct {
 
 func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	logger := r.Log.WithValues("notification", req.NamespacedName)
+	logger := r.Log.WithValues("Reconcile", req.NamespacedName)
 
 	// your logic here
 	instance := &tmaxiov1alpha1.NotificationTrigger{}
@@ -75,27 +75,64 @@ func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("NotificationTrigger", "name", instance.Name, "Notification", instance.Spec.Notification)
-
 	action := &tmaxiov1alpha1.Notification{}
 	err = r.Client.Get(ctx, types.NamespacedName{Name: instance.Spec.Notification, Namespace: req.Namespace}, action)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, err
+	}
+
+	smtpcfg := &tmaxiov1alpha1.SMTPConfig{}
+	// XXX: Is SMTPConfig should be in same namespace?
+	err = r.Client.Get(ctx, types.NamespacedName{Name: action.Spec.Email.SMTPConfig, Namespace: req.Namespace}, smtpcfg)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, err
+	}
+
+	smtpSecret := &corev1.Secret{}
+	// XXX: Is Secret should be in same namespace?
+	err = r.Client.Get(ctx, types.NamespacedName{Name: smtpcfg.Spec.CredentialSecret, Namespace: req.Namespace}, smtpSecret)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, err
+	}
+
+	var username string
+	var password string
+
+	switch smtpSecret.Type {
+	case corev1.SecretTypeOpaque, corev1.SecretTypeBasicAuth:
+		bUsername, ok := smtpSecret.Data[corev1.BasicAuthUsernameKey]
+		if !ok {
+			return ctrl.Result{}, fmt.Errorf("username not found: %s\n", corev1.BasicAuthUsernameKey)
+		}
+		username = string(bUsername)
+		bPassword, ok := smtpSecret.Data[corev1.BasicAuthPasswordKey]
+		if !ok {
+			return ctrl.Result{}, fmt.Errorf("password not found: %s\n", corev1.BasicAuthPasswordKey)
+		}
+		password = string(bPassword)
+	default:
+		// TODO: load from controller configmap
 	}
 
 	var noti notification.Notification
 	if &action.Spec.Email != nil {
 		noti = notification.MailNotification{
 			SMTPConnection: notification.SMTPConnection{
-				Host: "smtp.gmail.com",
-				Port: 587,
+				Host: smtpcfg.Spec.Host,
+				Port: smtpcfg.Spec.Port,
 			},
 			SMTPAccount: notification.SMTPAccount{
-				Username: "voidmain0805@gmail.com",
-				Password: "jmmdhkfzeuyivtmb",
+				Username: username,
+				Password: password,
 			},
 			MailMessage: notification.MailMessage{
 				From:    action.Spec.Email.From,
@@ -112,12 +149,13 @@ func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 		// TODO:
 	}
 
-	if err := registry.Register(action.Name, noti); err != nil {
+	if err := registry.Register(instance.Name, noti); err != nil {
 		logger.Error(err, "Failed to register notification")
 		return ctrl.Result{}, err
 	}
 
 	if err := r.updateStatus(instance); err != nil {
+		logger.Error(err, "Failed to update trigger")
 		return ctrl.Result{}, err
 	}
 
@@ -125,14 +163,13 @@ func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 }
 
 func (r *NotificationTriggerReconciler) updateStatus(instance *tmaxiov1alpha1.NotificationTrigger) error {
-	original := instance.DeepCopy()
 	endpoint, err := r.GetEndpoint(instance.Spec.Notification)
 	if err != nil {
 		return err
 	}
 
 	instance.Status.EndPoint = endpoint
-	return r.Client.Status().Patch(context.TODO(), instance, client.MergeFrom(original))
+	return r.Status().Update(context.TODO(), instance)
 }
 
 func (r *NotificationTriggerReconciler) SetupWithManager(mgr ctrl.Manager) error {

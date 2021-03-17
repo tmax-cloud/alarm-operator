@@ -44,22 +44,22 @@ spec:
           properties:
             email:
               properties:
-                account:
-                  type: string
                 body:
                   type: string
                 cc:
                   type: string
                 from:
                   type: string
+                smtpcfg:
+                  type: string
                 subject:
                   type: string
                 to:
                   type: string
               required:
-              - account
               - body
               - from
+              - smtpcfg
               - subject
               - to
               type: object

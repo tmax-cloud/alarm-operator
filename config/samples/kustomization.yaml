@@ -3,4 +3,5 @@ resources:
 - email_notification.yaml
 - slack_notification.yaml
 - tmax.io_v1alpha1_notificationtrigger.yaml
+- tmax.io_v1alpha1_smtpconfig.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

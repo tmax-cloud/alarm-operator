@@ -33,12 +33,12 @@ const (
 )
 
 type EmailNotification struct {
-	SenderAccountSecret string `json:"account"`
-	From                string `json:"from"`
-	To                  string `json:"to"`
-	Cc                  string `json:"cc,omitempty"`
-	Subject             string `json:"subject"`
-	Body                string `json:"body"`
+	SMTPConfig string `json:"smtpcfg"`
+	From       string `json:"from"`
+	To         string `json:"to"`
+	Cc         string `json:"cc,omitempty"`
+	Subject    string `json:"subject"`
+	Body       string `json:"body"`
 }
 
 type WebhookNotification struct {
