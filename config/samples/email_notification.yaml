@@ -5,7 +5,7 @@ metadata:
 spec:
   # Add fields here
   email:
-    account: my-gmail-account
+    smtpcfg: smtpconfig-sample
     from: taejune_ahn@tmax.co.kr
     to: taejune_ahn@tmax.co.kr
     subject: "Notification from operator"
