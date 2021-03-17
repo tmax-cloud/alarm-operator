@@ -12,6 +12,9 @@ spec:
   - JSONPath: .status.type
     name: Action
     type: string
+  - JSONPath: .status.endpoint
+    name: Endpoint
+    type: string
   group: tmax.io.my.domain
   names:
     kind: Notification
@@ -93,6 +96,8 @@ spec:
         status:
           description: NotificationStatus defines the observed state of Notification
           properties:
+            endpoint:
+              type: string
             type:
               description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
                 of cluster Important: Run "make" to regenerate code after modifying

@@ -8,5 +8,5 @@ spec:
     smtpcfg: smtpconfig-sample
     from: taejune_ahn@tmax.co.kr
     to: taejune_ahn@tmax.co.kr
-    subject: "Notification from operator"
-    body: "Test message..."
+    subject: "[Notification] email-notification-sample"
+    body: "Hello"

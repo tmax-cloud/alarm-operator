@@ -70,13 +70,15 @@ type NotificationSpec struct {
 type NotificationStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Type NotificationType `json:"type,omitempty"`
+	Type     NotificationType `json:"type,omitempty"`
+	EndPoint string           `json:"endpoint,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=not
 // +kubebuilder:printcolumn:name="Action",type=string,JSONPath=`.status.type`
+// +kubebuilder:printcolumn:name="Endpoint",type=string,JSONPath=`.status.endpoint`
 
 // Notification is the Schema for the notifications API
 type Notification struct {
