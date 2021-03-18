@@ -12,7 +12,8 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
-IMG ?= azssi/alarm-operator:${VERSION}
+MANAGER_IMG ?= azssi/alarm-operator:${VERSION}
+NOTIFIER_IMG ?= azssi/notifier:${VERSION}
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -23,7 +24,7 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-all: manager
+all: manager notifier
 
 # Run tests
 ENVTEST_ASSETS_DIR = $(shell pwd)/testbin
@@ -36,9 +37,9 @@ test: generate fmt vet manifests
 manager: generate fmt vet
 	go build -o bin/manager main.go
 
-# Run notifier pod
+# Build notifier binary
 notifier:
-	$(KUSTOMIZE) build config/notifier | ko apply -f -
+	go build -o bin/notifier cmd/main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
@@ -54,7 +55,8 @@ uninstall: manifests kustomize
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${MANAGER_IMG}
+	cd config/notifier && $(KUSTOMIZE) edit set image notifier=${NOTIFIER_IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
@@ -74,12 +76,23 @@ generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # Build the docker image
-docker-build:
-	docker build . -t ${IMG}
+docker-build: docker-build-manager docker-build-notifier
+
+docker-build-manager:
+	docker build . -t ${MANAGER_IMG}
+
+docker-build-notifier:
+	docker build . -t ${NOTIFIER_IMG}
 
 # Push the docker image
-docker-push:
-	docker push ${IMG}
+
+docker-push: docker-push-manager docker-push-notifier
+
+docker-push-manager:
+	docker push ${MANAGER_IMG}
+
+docker-push-notifier:
+	docker push ${NOTIFIER_IMG}
 
 # find or download controller-gen
 # download controller-gen if necessary
