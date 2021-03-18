@@ -28,10 +28,11 @@ spec:
         args:
         - --enable-leader-election
         image: controller:latest
+        imagePullPolicy: Always
         name: manager
         env:
-        - name: REDIS_URL
-          value: redis://$(REDIS_NAME):6379/1
+        - name: NOTIFIER_URL
+          value: http://$(NOTIFIER_SVC_NAME):8080
         resources:
           limits:
             cpu: 100m

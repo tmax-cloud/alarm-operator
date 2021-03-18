@@ -35,12 +35,13 @@ func (w *Worker) start() {
 
 				if err := job.Execute(job); err != nil {
 					w.logger.Error(err)
-					return
+					continue
 				}
 
 			case <-w.stopCh:
 				return
 			}
 		}
+
 	}()
 }

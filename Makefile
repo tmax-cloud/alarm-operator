@@ -79,10 +79,10 @@ generate: controller-gen
 docker-build: docker-build-manager docker-build-notifier
 
 docker-build-manager:
-	docker build . -t ${MANAGER_IMG}
+	docker build . -f Dockerfile.manager -t ${MANAGER_IMG}
 
 docker-build-notifier:
-	docker build . -t ${NOTIFIER_IMG}
+	docker build . -f Dockerfile.notifier -t ${NOTIFIER_IMG}
 
 # Push the docker image
 

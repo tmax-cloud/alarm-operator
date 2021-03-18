@@ -7,6 +7,22 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - tmax.io.my.domain
   resources:
   - notifications
@@ -42,6 +58,22 @@ rules:
   - tmax.io.my.domain
   resources:
   - notificationtriggers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - tmax.io.my.domain
+  resources:
+  - smtpconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - tmax.io.my.domain
+  resources:
+  - smtpconfigs/status
   verbs:
   - get
   - patch

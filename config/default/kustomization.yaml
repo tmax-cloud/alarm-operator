@@ -69,10 +69,17 @@ vars:
 #    kind: Service
 #    version: v1
 #    name: webhook-service
-- name: REDIS_NAME
+- name: REDIS_SVC_NAME
   objref:
     kind: Service
     version: v1
     name: redis
+  fieldref:
+    fieldpath: metadata.name
+- name: NOTIFIER_SVC_NAME
+  objref:
+    kind: Service
+    version: v1
+    name: notifier
   fieldref:
     fieldpath: metadata.name

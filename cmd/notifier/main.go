@@ -53,9 +53,9 @@ func main() {
 		}
 	}()
 
-	h := handler.New(ctx, r, q, logger)
 	router := mux.NewRouter()
-	router.Handle("/", h)
+	router.Handle("/internal/notification/{id}", handler.NewRegistryHandler(ctx, r, logger)).Methods("POST")
+	router.Handle("/", handler.NewNotificationHandler(ctx, r, q, logger)).Methods("POST")
 
 	s := &http.Server{
 		Addr:           ":8080",

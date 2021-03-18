@@ -21,7 +21,7 @@ spec:
         imagePullPolicy: Always
         env:
         - name: REDIS_URL
-          value: redis://$(REDIS_NAME):6379/1
+          value: redis://$(REDIS_SVC_NAME):6379/1
         ports:
         - name: http
           containerPort: 8080

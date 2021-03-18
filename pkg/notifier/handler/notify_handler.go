@@ -16,7 +16,7 @@ type notificationHandler struct {
 	logger   *zap.SugaredLogger
 }
 
-func New(ctx context.Context, registry *notification.NotificationRegistry, queue *notification.NotificationQueue, logger *zap.SugaredLogger) http.Handler {
+func NewNotificationHandler(ctx context.Context, registry *notification.NotificationRegistry, queue *notification.NotificationQueue, logger *zap.SugaredLogger) http.Handler {
 	return &notificationHandler{
 		registry: registry,
 		queue:    queue,
