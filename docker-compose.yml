@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # manager:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.manager
+  #   container_name: manager
+  #   environment:
+  #     - NOTIFIER_URL=http://notifier:9000
+  #     - KUBE_CONFIG_PATH=/tmp/.kube
+  #   volumes:
+  #     - type: bind
+  #       source: ${HOME}/.kube
+  #       target: /tmp
+  #   depends_on:
+  #     - notifier
+
+  notifier:
+    build: 
+      context: .
+      dockerfile: Dockerfile.notifier
+    image: notifier:latest
+    container_name: notifier
+    environment:
+      - REDIS_URL=redis://redis:6379/1
+    ports:
+      - "9000:8080"
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    
