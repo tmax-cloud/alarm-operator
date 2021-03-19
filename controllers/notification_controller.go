@@ -20,8 +20,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/url"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -195,8 +198,11 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 	}
 
 	epHost := u.Hostname()
-	if u.Hostname() == "localhost" {
-		epHost = "127.0.0.1"
+	if !IsIpv4Regex(u.Hostname()) {
+		ips, _ := net.LookupIP(u.Hostname())
+		for _, ip := range ips {
+			epHost = ip.String()
+		}
 	}
 
 	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.xip.io:%s", o.Name, epHost, u.Port())
@@ -209,4 +215,11 @@ func (r *NotificationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&tmaxiov1alpha1.Notification{}).
 		Complete(r)
+}
+
+var ipRegex, _ = regexp.Compile(`^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`)
+
+func IsIpv4Regex(ipAddress string) bool {
+	ipAddress = strings.Trim(ipAddress, " ")
+	return ipRegex.MatchString(ipAddress)
 }
