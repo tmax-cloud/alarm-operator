@@ -11,9 +11,10 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+REG ?= tmaxcloudck
 # Image URL to use all building/pushing image targets
-MANAGER_IMG ?= azssi/alarm-operator:${VERSION}
-NOTIFIER_IMG ?= azssi/notifier:${VERSION}
+MANAGER_IMG ?= ${REG}/alarm-operator:${VERSION}
+NOTIFIER_IMG ?= ${REG}/notifier:${VERSION}
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -39,7 +40,7 @@ manager: generate fmt vet
 
 # Build notifier binary
 notifier:
-	go build -o bin/notifier cmd/main.go
+	go build -o bin/notifier cmd/notifier/main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
