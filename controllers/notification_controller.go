@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -86,11 +87,20 @@ func (r *NotificationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		return ctrl.Result{RequeueAfter: requeueDuration}, err
 	}
 
-	err = notifier.Register(o.Name, notiType, noti)
+	resp, err := notifier.Register(o.Name, notiType, noti)
 	if err != nil {
 		logger.Error(err, "Failed to register notification")
 		return ctrl.Result{RequeueAfter: requeueDuration}, err
 	}
+
+	ret, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error(err, "Failed to read response from notifier")
+		return ctrl.Result{}, err
+	}
+
+	defer resp.Body.Close()
+	logger.Info("Registered ", "response", string(ret))
 
 	if err := r.updateStatus(ctx, o); err != nil {
 		logger.Error(err, "Failed to update trigger")
@@ -192,21 +202,12 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 		return err
 	}
 
-	svc := corev1.Service{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: u.Hostname(), Namespace: o.Namespace}, &svc)
-	if err != nil {
-		return err
+	epHost := u.Hostname()
+	if u.Hostname() == "localhost" {
+		epHost = "127.0.0.1"
 	}
 
-	// FIXME:
-	var port int32
-	for _, p := range svc.Spec.Ports {
-		if p.Name == "http" {
-			port = p.Port
-		}
-	}
-	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.xip.io:%d", o.Name, svc.Spec.ClusterIP, port)
-
+	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.xip.io:%s", o.Name, epHost, u.Port())
 	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type)
 
 	return r.Status().Update(ctx, o)
