@@ -1,6 +1,8 @@
 package job
 
 import (
+	"crypto/tls"
+
 	"github.com/tmax-cloud/alarm-operator/pkg/notification"
 	"github.com/tmax-cloud/alarm-operator/pkg/notifier/background"
 	"gopkg.in/gomail.v2"
@@ -39,7 +41,7 @@ func (n *MailNotificationJob) Execute(job interface{}) error {
 	m.SetBody("text/html", n.noti.Body)
 
 	d := gomail.NewDialer(n.noti.Host, n.noti.Port, n.noti.Username, n.noti.Password)
-	// d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	if err := d.DialAndSend(m); err != nil {
 		return err
 	}

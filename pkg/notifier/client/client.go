@@ -10,17 +10,12 @@ import (
 )
 
 type Notifier struct {
-	URL    string
-	Client *http.Client
+	URL string
 }
 
-func New(u string, transport http.RoundTripper) *Notifier {
-
+func New(u string) *Notifier {
 	return &Notifier{
 		URL: u,
-		Client: &http.Client{
-			Transport: transport,
-		},
 	}
 }
 

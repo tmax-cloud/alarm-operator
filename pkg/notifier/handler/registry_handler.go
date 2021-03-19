@@ -73,5 +73,5 @@ func (h *registryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Notification: %s reserved.", id)))
+	w.Write([]byte("Notification reserved"))
 }

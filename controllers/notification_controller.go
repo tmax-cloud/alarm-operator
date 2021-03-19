@@ -18,10 +18,8 @@ package controllers
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"os"
 	"time"
@@ -45,13 +43,7 @@ var notifier *notifiercli.Notifier
 
 func init() {
 
-	notifier = notifiercli.New(os.Getenv("NOTIFIER_URL"),
-		&http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		})
-
+	notifier = notifiercli.New(os.Getenv("NOTIFIER_URL"))
 }
 
 // NotificationReconciler reconciles a Notification object
