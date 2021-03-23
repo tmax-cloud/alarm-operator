@@ -28,9 +28,70 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	tmaxiov1alpha1 "github.com/tmax-cloud/alarm-operator/api/v1alpha1"
+	"github.com/tmax-cloud/alarm-operator/pkg/monitor/scheduler"
 )
+
+const jobFinalizer = "monitor.finalizer.alarm-operator.tmax.io"
+
+type ResourceFetchTask struct {
+	client.Client
+	target *tmaxiov1alpha1.Monitor
+	url    string
+	body   string
+	logger logr.Logger
+}
+
+func (t *ResourceFetchTask) Run() error {
+
+	t.logger.Info("Start Task!!")
+
+	result := tmaxiov1alpha1.MonitorResult{}
+
+	req, err := http.NewRequest("GET", t.url, bytes.NewBuffer([]byte(t.body)))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	result.LastTime = time.Now().Format(time.RFC3339)
+	if res.StatusCode >= 200 && res.StatusCode < 300 {
+		result.Status = "Success"
+		dat, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+		result.Value = string(dat)
+	} else {
+		result.Status = "Fail"
+	}
+
+	t.target.Status.Result = result
+	t.logger.Info("result", "status", result.Status, "value", result.Value, "time", result.LastTime)
+
+	err = t.Status().Update(context.Background(), t.target)
+	if err != nil {
+		return err
+	}
+
+	t.logger.Info("END Task!!")
+	return nil
+}
+
+var gRunner *scheduler.JobRunner
+
+func init() {
+	gRunner = scheduler.NewJobRunner(context.Background(), 100)
+	go gRunner.Start()
+}
 
 // MonitorReconciler reconciles a Monitor object
 type MonitorReconciler struct {
@@ -57,52 +118,59 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	logger.Info("process", "spec.url", o.Spec.URL, "spec.body", o.Spec.Body, "interval", o.Spec.Interval)
 
-	fetchReq, err := http.NewRequest("GET", o.Spec.URL, bytes.NewBuffer([]byte(o.Spec.Body)))
-	if err != nil {
-		logger.Error(err, "failed to make request", "url", o.Spec.URL)
-		return ctrl.Result{RequeueAfter: requeueDuration}, err
-	}
-	fetchReq.Header.Set("Content-Type", "application/json")
-
-	fetchRes, err := http.DefaultClient.Do(fetchReq)
-	if err != nil {
-		logger.Error(err, "failed to fetch data", "url", o.Spec.URL)
-		return ctrl.Result{RequeueAfter: requeueDuration}, err
-	}
-
-	result := tmaxiov1alpha1.MonitorResult{
-		LastTime: time.Now().Format(time.RFC3339),
-	}
-
-	logger.Info("resposne", "statuscode", fetchRes.StatusCode, "status", fetchRes.Status)
-	if fetchRes.StatusCode >= 200 && fetchRes.StatusCode < 300 {
-		result.Status = "Success"
-		dat, err := ioutil.ReadAll(fetchRes.Body)
-		if err != nil {
-			logger.Error(err, "failed to read data", "url", o.Spec.URL)
-			return ctrl.Result{RequeueAfter: requeueDuration}, err
+	if o.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !hasFinalizer(o) {
+			o.ObjectMeta.Finalizers = append(o.ObjectMeta.Finalizers, jobFinalizer)
+			if err := r.Update(context.Background(), o); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
-		defer fetchRes.Body.Close()
-		result.Value = string(dat)
-	} else {
-		result.Status = "Fail"
-	}
 
-	result.Status = "Success"
-	logger.Info("result", "status", result.Status, "value", result.Value, "time", result.LastTime)
+		task := &ResourceFetchTask{
+			url:    o.Spec.URL,
+			body:   o.Spec.Body,
+			Client: r.Client,
+			target: o,
+			logger: logger,
+		}
+
+		job := scheduler.NewIntervalJob(o.Name, time.Duration(o.Spec.Interval), task)
+		gRunner.Schedule(job)
+	} else {
+		if hasFinalizer(o) {
+			removeFinalizer(o)
+			gRunner.CancelJob(o.Name)
+			if err := r.Update(context.Background(), o); err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
 
 	// FIXME:
 	// o.Status.Results = append(o.Status.Results, result)
-	o.Status.Result = result
 
-	err = r.Client.Status().Update(ctx, o)
-	if err != nil {
-		logger.Error(err, "failed to update monitor")
-		return ctrl.Result{RequeueAfter: requeueDuration}, err
-	}
-
-	logger.Info("end")
 	return ctrl.Result{}, nil
+}
+
+func hasFinalizer(m *tmaxiov1alpha1.Monitor) bool {
+	for _, f := range m.ObjectMeta.Finalizers {
+		if f == jobFinalizer {
+			return true
+		}
+	}
+	return false
+}
+
+func removeFinalizer(m *tmaxiov1alpha1.Monitor) {
+	newFinalizers := []string{}
+	for _, f := range m.ObjectMeta.Finalizers {
+		if f == jobFinalizer {
+			continue
+		}
+		newFinalizers = append(newFinalizers, f)
+	}
+	m.ObjectMeta.Finalizers = newFinalizers
 }
 
 func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {

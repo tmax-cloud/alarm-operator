@@ -23,12 +23,8 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type DataSource struct {
-	URL string `json:"url"`
-}
-
 type MonitorResult struct {
-	Status   string `json:"string"`
+	Status   string `json:"status"`
 	Value    string `json:"value,omitempty"`
 	LastTime string `json:"lastFetchTime"`
 }
