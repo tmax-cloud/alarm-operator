@@ -39,12 +39,24 @@ spec:
         spec:
           description: NotificationTriggerSpec defines the desired state of NotificationTrigger
           properties:
+            monitor:
+              type: string
             notification:
               description: Foo is an example field of NotificationTrigger. Edit NotificationTrigger_types.go
                 to remove/update
               type: string
+            op:
+              type: string
+            operand:
+              type: string
+            watchFieldPath:
+              type: string
           required:
+          - monitor
           - notification
+          - op
+          - operand
+          - watchFieldPath
           type: object
         status:
           description: NotificationTriggerStatus defines the observed state of NotificationTrigger

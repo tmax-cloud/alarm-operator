@@ -21,6 +21,7 @@ import (
 	"context"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -28,13 +29,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	tmaxiov1alpha1 "github.com/tmax-cloud/alarm-operator/api/v1alpha1"
 	"github.com/tmax-cloud/alarm-operator/pkg/monitor/scheduler"
 )
 
-const jobFinalizer = "monitor.finalizer.alarm-operator.tmax.io"
+const monFinalizer = "monitor.finalizer.alarm-operator.tmax.io"
 
 type ResourceFetchTask struct {
 	client.Client
@@ -113,16 +113,15 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("process", "spec.url", o.Spec.URL, "spec.body", o.Spec.Body, "interval", o.Spec.Interval)
+	logger.Info("process", "subscribers", o.Annotations["subscribers"])
 
 	if o.ObjectMeta.DeletionTimestamp.IsZero() {
-		if !hasFinalizer(o) {
-			o.ObjectMeta.Finalizers = append(o.ObjectMeta.Finalizers, jobFinalizer)
+		if !hasMonFinalizer(o) {
+			o.ObjectMeta.Finalizers = append(o.ObjectMeta.Finalizers, monFinalizer)
 			if err := r.Update(context.Background(), o); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
-
 		task := &ResourceFetchTask{
 			url:    o.Spec.URL,
 			body:   o.Spec.Body,
@@ -134,11 +133,11 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		gRunner.Schedule(job)
 
 	} else {
-		if hasFinalizer(o) {
-			removeFinalizer(o)
+		if hasMonFinalizer(o) {
+			removeMonFinalizer(o)
 			gRunner.CancelJob(o.Name)
 			if err := r.Update(context.Background(), o); err != nil {
-				return reconcile.Result{}, err
+				return ctrl.Result{}, err
 			}
 		}
 		return ctrl.Result{}, nil
@@ -150,19 +149,23 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func hasFinalizer(m *tmaxiov1alpha1.Monitor) bool {
+func getSubscribers(m *tmaxiov1alpha1.Monitor) []string {
+	return strings.Split(m.Annotations["subscribers"], ",")
+}
+
+func hasMonFinalizer(m *tmaxiov1alpha1.Monitor) bool {
 	for _, f := range m.ObjectMeta.Finalizers {
-		if f == jobFinalizer {
+		if f == monFinalizer {
 			return true
 		}
 	}
 	return false
 }
 
-func removeFinalizer(m *tmaxiov1alpha1.Monitor) {
+func removeMonFinalizer(m *tmaxiov1alpha1.Monitor) {
 	newFinalizers := []string{}
 	for _, f := range m.ObjectMeta.Finalizers {
-		if f == jobFinalizer {
+		if f == monFinalizer {
 			continue
 		}
 		newFinalizers = append(newFinalizers, f)

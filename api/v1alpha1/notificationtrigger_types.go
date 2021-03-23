@@ -29,7 +29,11 @@ type NotificationTriggerSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of NotificationTrigger. Edit NotificationTrigger_types.go to remove/update
-	Notification string `json:"notification"`
+	NotificationName string `json:"notification"`
+	MonitorName      string `json:"monitor"`
+	WatchFieldPath   string `json:"watchFieldPath"`
+	Op               string `json:"op"`
+	Operand          string `json:"operand"`
 }
 
 // NotificationTriggerStatus defines the observed state of NotificationTrigger
