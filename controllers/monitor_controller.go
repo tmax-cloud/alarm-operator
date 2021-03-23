@@ -46,8 +46,6 @@ type ResourceFetchTask struct {
 
 func (t *ResourceFetchTask) Run() error {
 
-	t.logger.Info("Start Task!!")
-
 	result := tmaxiov1alpha1.MonitorResult{}
 
 	req, err := http.NewRequest("GET", t.url, bytes.NewBuffer([]byte(t.body)))
@@ -82,7 +80,6 @@ func (t *ResourceFetchTask) Run() error {
 		return err
 	}
 
-	t.logger.Info("END Task!!")
 	return nil
 }
 
@@ -133,9 +130,9 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			target: o,
 			logger: logger,
 		}
-
 		job := scheduler.NewIntervalJob(o.Name, time.Duration(o.Spec.Interval), task)
 		gRunner.Schedule(job)
+
 	} else {
 		if hasFinalizer(o) {
 			removeFinalizer(o)

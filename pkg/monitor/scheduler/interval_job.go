@@ -26,12 +26,10 @@ func NewIntervalJob(name string, interval time.Duration, task Task) *IntervalJob
 }
 
 func (j *IntervalJob) Run() {
-	fmt.Println(">>   ", j.name)
 	if err := j.task.Run(); err != nil {
+		// FIXME: don't just print out message.
 		fmt.Println(err)
 	}
-
-	fmt.Println("  << ", j.name)
 }
 
 func (j *IntervalJob) Name() string {

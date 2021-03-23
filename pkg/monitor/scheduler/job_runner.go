@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"fmt"
 	"time"
 )
 
@@ -25,12 +24,10 @@ func (r *JobRunner) Start() {
 		select {
 		case job, ok := <-r.ch:
 			if !ok {
-				fmt.Println("closed job channel")
 				continue
 			}
 			go job.Run()
 		case <-r.ctx.Done():
-			fmt.Println("context done")
 			return
 		}
 	}
