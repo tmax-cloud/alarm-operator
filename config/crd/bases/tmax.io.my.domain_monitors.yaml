@@ -48,7 +48,7 @@ spec:
             body:
               type: string
             interval:
-              type: string
+              type: integer
             url:
               type: string
           required:
@@ -59,27 +59,22 @@ spec:
         status:
           description: MonitorStatus defines the observed state of Monitor
           properties:
-            lastTime:
-              type: string
-            results:
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "make" to regenerate code after modifying
-                this file'
-              items:
-                properties:
-                  lastFetchTime:
-                    type: string
-                  string:
-                    type: string
-                  value:
-                    type: string
-                required:
-                - lastFetchTime
-                - string
-                type: object
-              type: array
+            result:
+              description: 'FIXME: Uncomment next line. (client''s Status().Update()
+                requeue on adding entry) Results  []MonitorResult `json:"results,omitempty"`'
+              properties:
+                lastFetchTime:
+                  type: string
+                string:
+                  type: string
+                value:
+                  type: string
+              required:
+              - lastFetchTime
+              - string
+              type: object
           required:
-          - lastTime
+          - result
           type: object
       type: object
   version: v1alpha1

@@ -40,15 +40,17 @@ type MonitorSpec struct {
 
 	URL      string `json:"url"`
 	Body     string `json:"body"`
-	Interval string `json:"interval"`
+	Interval int    `json:"interval"`
 }
 
 // MonitorStatus defines the observed state of Monitor
 type MonitorStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Results  []MonitorResult `json:"results,omitempty"`
-	LastTime string          `json:"lastTime"`
+
+	// FIXME: Uncomment next line. (client's Status().Update() requeue on adding entry)
+	// Results  []MonitorResult `json:"results,omitempty"`
+	Result MonitorResult `json:"result"`
 }
 
 // +kubebuilder:object:root=true

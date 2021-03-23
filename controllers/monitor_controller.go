@@ -17,7 +17,10 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
+	"io/ioutil"
+	"net/http"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -54,43 +57,44 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	logger.Info("process", "spec.url", o.Spec.URL, "spec.body", o.Spec.Body, "interval", o.Spec.Interval)
 
-	// fetchReq, err := http.NewRequest("GET", o.Spec.URL, bytes.NewBuffer([]byte(o.Spec.Body)))
-	// if err != nil {
-	// 	logger.Error(err, "failed to make request", "url", o.Spec.URL)
-	// 	return ctrl.Result{RequeueAfter: requeueDuration}, err
-	// }
-	// fetchReq.Header.Set("Content-Type", "application/json")
+	fetchReq, err := http.NewRequest("GET", o.Spec.URL, bytes.NewBuffer([]byte(o.Spec.Body)))
+	if err != nil {
+		logger.Error(err, "failed to make request", "url", o.Spec.URL)
+		return ctrl.Result{RequeueAfter: requeueDuration}, err
+	}
+	fetchReq.Header.Set("Content-Type", "application/json")
 
-	// fetchRes, err := http.DefaultClient.Do(fetchReq)
-	// if err != nil {
-	// 	logger.Error(err, "failed to fetch data", "url", o.Spec.URL)
-	// 	return ctrl.Result{RequeueAfter: requeueDuration}, err
-	// }
+	fetchRes, err := http.DefaultClient.Do(fetchReq)
+	if err != nil {
+		logger.Error(err, "failed to fetch data", "url", o.Spec.URL)
+		return ctrl.Result{RequeueAfter: requeueDuration}, err
+	}
 
 	result := tmaxiov1alpha1.MonitorResult{
 		LastTime: time.Now().Format(time.RFC3339),
 	}
 
-	// logger.Info("resposne", "statuscode", fetchRes.StatusCode, "status", fetchRes.Status)
-	// if fetchRes.StatusCode >= 200 && fetchRes.StatusCode < 300 {
-	// 	result.Status = "Success"
-	// 	dat, err := ioutil.ReadAll(fetchRes.Body)
-	// 	if err != nil {
-	// 		logger.Error(err, "failed to read data", "url", o.Spec.URL)
-	// 		return ctrl.Result{RequeueAfter: requeueDuration}, err
-	// 	}
-	// 	defer fetchRes.Body.Close()
-	// 	result.Value = string(dat)
-	// } else {
-	// 	result.Status = "Fail"
-	// }
+	logger.Info("resposne", "statuscode", fetchRes.StatusCode, "status", fetchRes.Status)
+	if fetchRes.StatusCode >= 200 && fetchRes.StatusCode < 300 {
+		result.Status = "Success"
+		dat, err := ioutil.ReadAll(fetchRes.Body)
+		if err != nil {
+			logger.Error(err, "failed to read data", "url", o.Spec.URL)
+			return ctrl.Result{RequeueAfter: requeueDuration}, err
+		}
+		defer fetchRes.Body.Close()
+		result.Value = string(dat)
+	} else {
+		result.Status = "Fail"
+	}
 
 	result.Status = "Success"
 	logger.Info("result", "status", result.Status, "value", result.Value, "time", result.LastTime)
 
-	o.Status.Results = append(o.Status.Results, result)
+	// FIXME:
+	// o.Status.Results = append(o.Status.Results, result)
+	o.Status.Result = result
 
-	o.Status.LastTime = time.Now().Format(time.RFC3339)
 	err = r.Client.Status().Update(ctx, o)
 	if err != nil {
 		logger.Error(err, "failed to update monitor")
