@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"path"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -121,9 +122,10 @@ func removeNtrFinalizer(m *tmaxiov1alpha1.NotificationTrigger) {
 }
 
 func hasSubscribeAnnotation(o *tmaxiov1alpha1.NotificationTrigger, mon *tmaxiov1alpha1.Monitor) bool {
+	entry := path.Join(o.Namespace, o.Name)
 	subscribers := strings.Split(mon.Annotations["subscribers"], ",")
 	for _, subcriber := range subscribers {
-		if subcriber == o.Name {
+		if subcriber == entry {
 			return true
 		}
 	}
@@ -132,19 +134,21 @@ func hasSubscribeAnnotation(o *tmaxiov1alpha1.NotificationTrigger, mon *tmaxiov1
 
 func addSubscribeAnnotation(o *tmaxiov1alpha1.NotificationTrigger, mon *tmaxiov1alpha1.Monitor) {
 	var newAnnotation string
+	entry := path.Join(o.Namespace, o.Name)
 	if mon.Annotations["subscribers"] == "" {
-		newAnnotation = o.Name
+		newAnnotation = entry
 	} else {
-		newAnnotation = strings.Join([]string{mon.Annotations["subscribers"], o.Name}, ",")
+		newAnnotation = strings.Join([]string{mon.Annotations["subscribers"], entry}, ",")
 	}
 	mon.Annotations["subscribers"] = newAnnotation
 }
 
 func removeSubscribeAnnotation(o *tmaxiov1alpha1.NotificationTrigger, mon *tmaxiov1alpha1.Monitor) {
 	others := []string{}
+	entry := path.Join(o.Namespace, o.Name)
 	subscribers := strings.Split(mon.Annotations["subscribers"], ",")
 	for _, subscriber := range subscribers {
-		if subscriber == o.Name {
+		if subscriber == entry {
 			continue
 		}
 		others = append(others, subscriber)
