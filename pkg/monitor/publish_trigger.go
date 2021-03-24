@@ -1,8 +1,11 @@
 package monitor
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/Jeffail/gabs"
@@ -22,7 +25,7 @@ type PublishTrigger struct {
 
 func (t *PublishTrigger) Handle(ctx context.Context) error {
 
-	logger := t.Logger.WithName("PublishTrigger")
+	logger := t.Logger.WithName("PublishTrigger").WithValues("monitor", t.Target.Name)
 
 	o := &tmaxiov1alpha1.Monitor{}
 	err := t.Client.Get(ctx, t.Target, o)
@@ -39,29 +42,40 @@ func (t *PublishTrigger) Handle(ctx context.Context) error {
 
 	for _, subscriber := range subscribers {
 		ntr := &tmaxiov1alpha1.NotificationTrigger{}
-		err := t.Client.Get(context.Background(), subscriber, ntr)
-		if err != nil {
+		if err := t.Client.Get(context.Background(), subscriber, ntr); err != nil {
+			logger.Error(err, "")
+			return err
+		}
+
+		nt := &tmaxiov1alpha1.Notification{}
+		ntNamespaceName := types.NamespacedName{Namespace: subscriber.Namespace, Name: ntr.Spec.NotificationName}
+		if err := t.Client.Get(context.Background(), ntNamespaceName, nt); err != nil {
+			logger.Error(err, "")
+			return err
+		}
+
+		if nt.Status.EndPoint == "" {
+			err := fmt.Errorf("notification's endpoint not prepared")
+			logger.Error(err, "")
 			return err
 		}
 
 		logger.Info("subscriber", "name", ntr.Name, "notification", ntr.Spec.NotificationName)
 		jsonParsed, err := gabs.ParseJSON(cron.DataFrom(ctx))
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		v := jsonParsed.Path(ntr.Spec.WatchFieldPath).Data()
 
-		switch v.(type) {
-		case int, int32, int64:
-			logger.Info("int value", "field", ntr.Spec.WatchFieldPath, "value", v)
-		case float32, float64:
-			logger.Info("float value", "field", ntr.Spec.WatchFieldPath, "value", v)
-		case string:
-			logger.Info("string value", "field", ntr.Spec.WatchFieldPath, "value", v)
-		case map[string]interface{}:
-			logger.Info("object value", "field", ntr.Spec.WatchFieldPath, "value", v)
+		logger.Info("eval condition", "op1", v, "op2", ntr.Spec.Operand, "op", ntr.Spec.Op)
+		if eval(v, ntr.Spec.Operand, ntr.Spec.Op) {
+			logger.Info("Matched condition")
+			postEndpoint(nt.Status.EndPoint)
+		} else {
+			logger.Info("Unmatched condition")
 		}
+
 	}
 
 	return nil
@@ -78,4 +92,105 @@ func parseSubscribers(o *tmaxiov1alpha1.Monitor) []types.NamespacedName {
 		ret = append(ret, types.NamespacedName{Namespace: tokens[0], Name: tokens[1]})
 	}
 	return ret
+}
+
+func eval(op1 interface{}, op2 string, op string) bool {
+	switch op {
+	case "gt", "<":
+		switch op1 := op1.(type) {
+		case int:
+			operand, _ := strconv.Atoi(op2)
+			if op1 > operand {
+				return true
+			}
+		case float64:
+			operand, _ := strconv.Atoi(op2)
+			if op1 > float64(operand) {
+				return true
+			}
+		case string:
+			if op1 > op2 {
+				return true
+			}
+		}
+	case "gte", "<=":
+		switch op1 := op1.(type) {
+		case int:
+			operand, _ := strconv.Atoi(op2)
+			if op1 >= operand {
+				return true
+			}
+		case float64:
+			operand, _ := strconv.Atoi(op2)
+			if op1 >= float64(operand) {
+				return true
+			}
+		case string:
+			if op1 >= op2 {
+				return true
+			}
+		}
+	case "eq", "==":
+		switch op1 := op1.(type) {
+		case int:
+			operand, _ := strconv.Atoi(op2)
+			if op1 == operand {
+				return true
+			}
+		case float64:
+			operand, _ := strconv.Atoi(op2)
+			if op1 == float64(operand) {
+				return true
+			}
+		case string:
+			if op1 == op2 {
+				return true
+			}
+		}
+	case "lte", ">=":
+		switch op1 := op1.(type) {
+		case int:
+			operand, _ := strconv.Atoi(op2)
+			if op1 <= operand {
+				return true
+			}
+		case float64:
+			operand, _ := strconv.Atoi(op2)
+			if op1 <= float64(operand) {
+				return true
+			}
+		case string:
+			if op1 <= op2 {
+				return true
+			}
+		}
+	case "lt", ">":
+		switch op1 := op1.(type) {
+		case int:
+			operand, _ := strconv.Atoi(op2)
+			if op1 < operand {
+				return true
+			}
+		case float64:
+			operand, _ := strconv.Atoi(op2)
+			if op1 < float64(operand) {
+				return true
+			}
+		case string:
+			if op1 < op2 {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func postEndpoint(url string) error {
+	_, err := http.Post(url, "application/json", bytes.NewBuffer([]byte("")))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

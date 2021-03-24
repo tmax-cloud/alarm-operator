@@ -5,6 +5,6 @@ metadata:
 spec:
   notification: email-notification-sample
   monitor: monitor-sample
-  watchFieldPath: hits.total
-  op: bg
+  watchFieldPath: hits.total.value
+  op: gt
   operand: "0"
