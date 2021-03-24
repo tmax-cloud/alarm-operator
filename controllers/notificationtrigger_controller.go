@@ -45,7 +45,7 @@ type NotificationTriggerReconciler struct {
 
 func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	logger := r.Log.WithValues("notificationtrigger", req.NamespacedName)
+	logger := r.Log.WithValues("reconcile", req.NamespacedName)
 
 	o := &tmaxiov1alpha1.NotificationTrigger{}
 	err := r.Client.Get(ctx, req.NamespacedName, o)
@@ -87,9 +87,12 @@ func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 	} else {
 		if hasNtrFinalizer(o) {
 			removeSubscribeAnnotation(o, mon)
+			logger.Info("remove subscriber annotation", "name", mon.Name, "annotation", mon.Annotations["subscribers"])
 			if err := r.Update(context.Background(), mon); err != nil {
 				return ctrl.Result{}, err
 			}
+
+			logger.Info("remove finalizer", "name", o.Name)
 			removeNtrFinalizer(o)
 			if err := r.Update(context.Background(), o); err != nil {
 				return ctrl.Result{}, err

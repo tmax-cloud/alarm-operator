@@ -2,7 +2,6 @@ package cron
 
 import (
 	"context"
-	"fmt"
 	"time"
 )
 
@@ -43,20 +42,29 @@ func NewJob(name string) *Job {
 	}
 }
 
+func (j *Job) Clone() *Job {
+	ctx, cancel := context.WithCancel(context.Background())
+	return &Job{
+		name:      j.name,
+		interval:  j.interval,
+		unit:      j.unit,
+		taskFunc:  j.taskFunc,
+		ctx:       ctx,
+		cancel:    cancel,
+		isRunning: j.isRunning,
+	}
+}
+
 func (j *Job) Run() {
-	fmt.Println(">>   ", j.name)
 	j.taskFunc(j.ctx)
-	fmt.Println("  << ", j.name)
 }
 
-func (j *Job) Name() string {
-	return j.name
-}
+func (j *Job) GetInterval() time.Duration {
+	// TODO:
+	switch j.unit {
+	case seconds:
+		return time.Second * j.interval
+	}
 
-func (j *Job) Cancel() {
-	j.cancel()
-}
-
-func (j *Job) Done() <-chan struct{} {
-	return j.ctx.Done()
+	return time.Second * j.interval
 }

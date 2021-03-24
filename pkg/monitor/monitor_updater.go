@@ -17,41 +17,45 @@ import (
 
 type MonitorUpdater struct {
 	client.Client
-	target types.NamespacedName
-	logger logr.Logger
+	Target types.NamespacedName
+	Logger logr.Logger
 }
 
 func (r *MonitorUpdater) HandleFunc(next cron.TaskFunc) cron.TaskFunc {
 	return func(ctx context.Context) error {
-		r.handle(ctx)
+		ctx, err := r.handle(ctx)
+		if err != nil {
+			return err
+		}
 		return next(ctx)
 	}
 }
 
 func (r *MonitorUpdater) Handle(ctx context.Context) error {
-	return r.handle(ctx)
+	_, err := r.handle(ctx)
+	return err
 }
 
-func (r *MonitorUpdater) handle(ctx context.Context) error {
+func (r *MonitorUpdater) handle(ctx context.Context) (context.Context, error) {
 
-	logger := r.logger.WithName("MonitorUpdater")
+	logger := r.Logger.WithName("MonitorUpdater")
 
 	o := &tmaxiov1alpha1.Monitor{}
-	err := r.Client.Get(ctx, r.target, o)
+	err := r.Client.Get(ctx, r.Target, o)
 	if err != nil {
-		return err
+		return ctx, err
 	}
 
 	result := tmaxiov1alpha1.MonitorResult{}
 	req, err := http.NewRequest("GET", o.Spec.URL, bytes.NewBuffer([]byte(o.Spec.Body)))
 	if err != nil {
-		return err
+		return ctx, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return ctx, err
 	}
 
 	result.LastTime = time.Now().Format(time.RFC3339)
@@ -59,7 +63,7 @@ func (r *MonitorUpdater) handle(ctx context.Context) error {
 		result.Status = "Success"
 		dat, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			return err
+			return ctx, err
 		}
 		defer res.Body.Close()
 		result.Value = string(dat)
@@ -69,12 +73,12 @@ func (r *MonitorUpdater) handle(ctx context.Context) error {
 	}
 
 	o.Status.Result = result
-	logger.Info("result", "status", result.Status, "value", result.Value, "time", result.LastTime)
+	logger.Info("Fetched", "status", result.Status)
 
 	err = r.Client.Status().Update(context.Background(), o)
 	if err != nil {
-		return err
+		return ctx, err
 	}
 
-	return nil
+	return ctx, nil
 }

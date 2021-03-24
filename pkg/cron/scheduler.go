@@ -3,22 +3,25 @@ package cron
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 )
 
 var current string
 
 type Scheduler struct {
-	ctx  context.Context
-	ch   chan Job
-	jobs map[string]*Job
+	ctx   context.Context
+	ch    chan Job
+	jobs  map[string]*Job
+	mutex *sync.RWMutex
 }
 
 func NewScheduler(ctx context.Context, size int) *Scheduler {
 	return &Scheduler{
-		ctx:  ctx,
-		ch:   make(chan Job, size),
-		jobs: make(map[string]*Job),
+		ctx:   ctx,
+		ch:    make(chan Job, size),
+		jobs:  make(map[string]*Job),
+		mutex: new(sync.RWMutex),
 	}
 }
 
@@ -39,6 +42,9 @@ func (r *Scheduler) Start() {
 }
 
 func (r *Scheduler) Schedule(name string) *Scheduler {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
 	current = name
 	if _, ok := r.jobs[current]; !ok {
 		r.jobs[current] = NewJob(name)
@@ -48,6 +54,9 @@ func (r *Scheduler) Schedule(name string) *Scheduler {
 }
 
 func (r *Scheduler) Every(interval interface{}) *Scheduler {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
 	switch interval := interval.(type) {
 	case int:
 		r.jobs[current].interval = time.Duration(interval)
@@ -58,37 +67,33 @@ func (r *Scheduler) Every(interval interface{}) *Scheduler {
 }
 
 func (r *Scheduler) Second() *Scheduler {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
 	r.jobs[current].unit = seconds
 	return r
 }
 
 func (r *Scheduler) Do(taskFn TaskFunc) *Scheduler {
-	this := r.jobs[current]
-	if this.isRunning {
-		return r
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	r.jobs[current].taskFunc = taskFn
+	if r.jobs[current].isRunning {
+		r.jobs[current].cancel()
+		r.jobs[current] = r.jobs[current].Clone()
 	}
 
+	this := r.jobs[current]
 	go func() {
 		this.isRunning = true
-		this.taskFunc = taskFn
-
-		calcDuration := func() time.Duration {
-			var duration time.Duration
-			switch this.unit {
-			case seconds:
-				duration = time.Second * this.interval
-			}
-			return duration
-		}
-
-		ticker := time.NewTicker(calcDuration())
+		ticker := time.NewTicker(this.GetInterval())
 		for {
 			select {
 			case <-ticker.C:
 				r.ch <- *this
-				ticker.Reset(calcDuration())
-			case <-this.Done():
-				fmt.Println(this.name, " Done")
+				ticker.Reset(this.GetInterval())
+			case <-this.ctx.Done():
 				ticker.Stop()
 				return
 			}
@@ -100,6 +105,6 @@ func (r *Scheduler) Do(taskFn TaskFunc) *Scheduler {
 
 func (r *Scheduler) Cancel(name string) {
 	if j, ok := r.jobs[name]; ok {
-		j.Cancel()
+		j.cancel()
 	}
 }

@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/Jeffail/gabs"
@@ -15,21 +16,27 @@ import (
 
 type PublishTrigger struct {
 	client.Client
-	target types.NamespacedName
-	logger logr.Logger
+	Target types.NamespacedName
+	Logger logr.Logger
 }
 
 func (t *PublishTrigger) Handle(ctx context.Context) error {
 
-	logger := t.logger.WithName("PublishTrigger")
+	logger := t.Logger.WithName("PublishTrigger")
 
 	o := &tmaxiov1alpha1.Monitor{}
-	err := t.Client.Get(ctx, t.target, o)
+	err := t.Client.Get(ctx, t.Target, o)
 	if err != nil {
 		return err
 	}
 
 	subscribers := parseSubscribers(o)
+	if len(subscribers) == 0 {
+		err := fmt.Errorf("no subscriber recorded")
+		logger.Error(err, "err")
+		return err
+	}
+
 	for _, subscriber := range subscribers {
 		ntr := &tmaxiov1alpha1.NotificationTrigger{}
 		err := t.Client.Get(context.Background(), subscriber, ntr)
@@ -37,8 +44,7 @@ func (t *PublishTrigger) Handle(ctx context.Context) error {
 			return err
 		}
 
-		logger.Info("process", "spec.notification", ntr.Spec.NotificationName, "spec.watchFieldPath", ntr.Spec.WatchFieldPath, "monitor", ntr.Spec.MonitorName)
-
+		logger.Info("subscriber", "name", ntr.Name, "notification", ntr.Spec.NotificationName)
 		jsonParsed, err := gabs.ParseJSON(cron.DataFrom(ctx))
 		if err != nil {
 			panic(err)
@@ -48,13 +54,13 @@ func (t *PublishTrigger) Handle(ctx context.Context) error {
 
 		switch v.(type) {
 		case int, int32, int64:
-			logger.Info("parsed value", "field", ntr.Spec.WatchFieldPath, "value", v)
+			logger.Info("int value", "field", ntr.Spec.WatchFieldPath, "value", v)
 		case float32, float64:
-			logger.Info("parsed value", "field", ntr.Spec.WatchFieldPath, "value", v)
+			logger.Info("float value", "field", ntr.Spec.WatchFieldPath, "value", v)
 		case string:
-			logger.Info("parsed value", "field", ntr.Spec.WatchFieldPath, "value", v)
+			logger.Info("string value", "field", ntr.Spec.WatchFieldPath, "value", v)
 		case map[string]interface{}:
-			logger.Info("parsed value", "field", ntr.Spec.WatchFieldPath, "value", v)
+			logger.Info("object value", "field", ntr.Spec.WatchFieldPath, "value", v)
 		}
 	}
 
@@ -64,6 +70,9 @@ func (t *PublishTrigger) Handle(ctx context.Context) error {
 func parseSubscribers(o *tmaxiov1alpha1.Monitor) []types.NamespacedName {
 	ret := []types.NamespacedName{}
 	subscribers := strings.Split(o.Annotations["subscribers"], ",")
+	if len(subscribers) == 1 && subscribers[0] == "" {
+		return ret
+	}
 	for _, subscriber := range subscribers {
 		tokens := strings.Split(subscriber, "/")
 		ret = append(ret, types.NamespacedName{Namespace: tokens[0], Name: tokens[1]})

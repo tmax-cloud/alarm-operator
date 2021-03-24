@@ -52,7 +52,7 @@ type MonitorReconciler struct {
 
 func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	logger := r.Log.WithValues("monitor", req.NamespacedName)
+	logger := r.Log.WithValues("reconcile", req.NamespacedName)
 
 	o := &tmaxiov1alpha1.Monitor{}
 	err := r.Client.Get(ctx, req.NamespacedName, o)
@@ -62,8 +62,6 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 		return ctrl.Result{}, err
 	}
-
-	logger.Info("process", "subscribers", o.Annotations["subscribers"])
 
 	if o.ObjectMeta.DeletionTimestamp.IsZero() {
 		if !hasMonFinalizer(o) {
@@ -76,17 +74,17 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		var handler cron.TaskFunc
 		task := &monitor.MonitorUpdater{
 			Client: r.Client,
-			target: req.NamespacedName,
-			logger: logger,
+			Target: req.NamespacedName,
+			Logger: logger,
 		}
 		handler = task.Handle
 
 		subs := strings.Split(o.Annotations["subscribers"], ",")
-		if len(subs) > 0 {
+		if len(subs) > 0 && subs[0] != "" {
 			postTask := &monitor.PublishTrigger{
 				Client: r.Client,
-				target: req.NamespacedName,
-				logger: logger,
+				Target: req.NamespacedName,
+				Logger: logger,
 			}
 
 			handler = task.HandleFunc(postTask.Handle)
