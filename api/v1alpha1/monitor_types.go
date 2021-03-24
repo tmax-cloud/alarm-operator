@@ -22,18 +22,20 @@ import (
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+const (
+	HistoryLimit     = 5
+	ValueSizeLimit   = 30
+	ValueReplacement = "..."
+)
 
 type MonitorResult struct {
-	Status   string `json:"status"`
-	Value    string `json:"value,omitempty"`
-	LastTime string `json:"lastFetchTime"`
+	Status    string `json:"status"`
+	Value     string `json:"value,omitempty"`
+	UpdatedAt string `json:"updatedAt"`
 }
 
 // MonitorSpec defines the desired state of Monitor
 type MonitorSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	URL      string `json:"url"`
 	Body     string `json:"body"`
 	Interval int    `json:"interval"`
@@ -41,12 +43,7 @@ type MonitorSpec struct {
 
 // MonitorStatus defines the observed state of Monitor
 type MonitorStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// FIXME: Uncomment next line. (client's Status().Update() requeue on adding entry)
-	// Results  []MonitorResult `json:"results,omitempty"`
-	Result MonitorResult `json:"result"`
+	History []MonitorResult `json:"history,omitempty"`
 }
 
 // +kubebuilder:object:root=true

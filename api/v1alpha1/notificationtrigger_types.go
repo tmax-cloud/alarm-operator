@@ -23,23 +23,26 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type NotificationTriggerResult struct {
+	Triggered bool   `json:"triggered"`
+	Message   string `json:"message,omitempty"`
+	UpdatedAt string `json:"updatedAt,omitempty"`
+}
+
 // NotificationTriggerSpec defines the desired state of NotificationTrigger
 type NotificationTriggerSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of NotificationTrigger. Edit NotificationTrigger_types.go to remove/update
-	NotificationName string `json:"notification"`
-	MonitorName      string `json:"monitor"`
-	WatchFieldPath   string `json:"watchFieldPath"`
-	Op               string `json:"op"`
-	Operand          string `json:"operand"`
+	Notification string `json:"notification"`
+	Monitor      string `json:"monitor"`
+	FieldPath    string `json:"fieldPath"`
+	Op           string `json:"op"`
+	Operand      string `json:"operand"`
 }
 
 // NotificationTriggerStatus defines the observed state of NotificationTrigger
 type NotificationTriggerStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	History []NotificationTriggerResult `json:"history,omitempty"`
 }
 
 // +kubebuilder:object:root=true

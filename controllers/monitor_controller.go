@@ -63,6 +63,8 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	logger.Info("process")
+
 	if o.ObjectMeta.DeletionTimestamp.IsZero() {
 		if !hasMonFinalizer(o) {
 			o.ObjectMeta.Finalizers = append(o.ObjectMeta.Finalizers, monFinalizer)

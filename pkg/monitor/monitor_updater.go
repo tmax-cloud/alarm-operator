@@ -58,7 +58,7 @@ func (r *MonitorUpdater) handle(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	result.LastTime = time.Now().Format(time.RFC3339)
+	result.UpdatedAt = time.Now().Format(time.RFC3339)
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		result.Status = "Success"
 		dat, err := ioutil.ReadAll(res.Body)
@@ -72,9 +72,17 @@ func (r *MonitorUpdater) handle(ctx context.Context) (context.Context, error) {
 		result.Status = "Fail"
 	}
 
-	o.Status.Result = result
-	logger.Info("Fetched", "status", result.Status)
+	if len(result.Value) > tmaxiov1alpha1.ValueSizeLimit {
+		result.Value = tmaxiov1alpha1.ValueReplacement
+	}
 
+	o.Status.History = append(o.Status.History, result)
+	if len(o.Status.History) > tmaxiov1alpha1.HistoryLimit {
+		start := len(o.Status.History) - tmaxiov1alpha1.HistoryLimit
+		o.Status.History = o.Status.History[start:]
+	}
+
+	logger.Info("Fetched", "status", result.Status)
 	err = r.Client.Status().Update(context.Background(), o)
 	if err != nil {
 		return ctx, err

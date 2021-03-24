@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Jeffail/gabs"
 	"github.com/go-logr/logr"
@@ -48,7 +49,7 @@ func (t *PublishTrigger) Handle(ctx context.Context) error {
 		}
 
 		nt := &tmaxiov1alpha1.Notification{}
-		ntNamespaceName := types.NamespacedName{Namespace: subscriber.Namespace, Name: ntr.Spec.NotificationName}
+		ntNamespaceName := types.NamespacedName{Namespace: subscriber.Namespace, Name: ntr.Spec.Notification}
 		if err := t.Client.Get(context.Background(), ntNamespaceName, nt); err != nil {
 			logger.Error(err, "")
 			return err
@@ -60,22 +61,38 @@ func (t *PublishTrigger) Handle(ctx context.Context) error {
 			return err
 		}
 
-		logger.Info("subscriber", "name", ntr.Name, "notification", ntr.Spec.NotificationName)
+		logger.Info("subscriber", "name", ntr.Name, "notification", ntr.Spec.Notification)
 		jsonParsed, err := gabs.ParseJSON(cron.DataFrom(ctx))
 		if err != nil {
 			return err
 		}
 
-		v := jsonParsed.Path(ntr.Spec.WatchFieldPath).Data()
-
+		v := jsonParsed.Path(ntr.Spec.FieldPath).Data()
 		logger.Info("eval condition", "op1", v, "op2", ntr.Spec.Operand, "op", ntr.Spec.Op)
+
+		result := tmaxiov1alpha1.NotificationTriggerResult{}
 		if eval(v, ntr.Spec.Operand, ntr.Spec.Op) {
 			logger.Info("Matched condition")
+			result.Triggered = true
+			result.UpdatedAt = time.Now().Format(time.RFC3339)
 			postEndpoint(nt.Status.EndPoint)
 		} else {
 			logger.Info("Unmatched condition")
+			result.Message = fmt.Sprintf("monitored value(%v) is not matched condition(op: %s, operand: %v)", v, ntr.Spec.Op, ntr.Spec.Operand)
+			result.Triggered = false
 		}
 
+		ntr.Status.History = append(ntr.Status.History, result)
+		if len(ntr.Status.History) > tmaxiov1alpha1.HistoryLimit {
+			start := len(ntr.Status.History) - tmaxiov1alpha1.HistoryLimit
+			ntr.Status.History = ntr.Status.History[start:]
+		}
+
+		err = t.Client.Status().Update(context.Background(), ntr)
+		if err != nil {
+			logger.Error(err, "")
+			return err
+		}
 	}
 
 	return nil

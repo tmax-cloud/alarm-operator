@@ -56,10 +56,10 @@ func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("process", "spec.notification", o.Spec.NotificationName, "spec.watchFieldPath", o.Spec.WatchFieldPath, "monitor", o.Spec.MonitorName)
+	logger.Info("process", "spec.notification", o.Spec.Notification, "spec.watchFieldPath", o.Spec.FieldPath, "monitor", o.Spec.Monitor)
 
 	mon := &tmaxiov1alpha1.Monitor{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: o.Spec.MonitorName, Namespace: o.Namespace}, mon)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: o.Spec.Monitor, Namespace: o.Namespace}, mon)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -76,9 +76,9 @@ func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 		}
 
 		if hasSubscribeAnnotation(o, mon) {
-			logger.Info("Already has subscribe annotation", "Monitor", mon.Name)
+			// logger.Info("Already has subscribe annotation", "Monitor", mon.Name)
 		} else {
-			logger.Info("Add subscribe annotation", "Monitor", mon.Name)
+			// logger.Info("Add subscribe annotation", "Monitor", mon.Name)
 			addSubscribeAnnotation(o, mon)
 			if err := r.Update(context.Background(), mon); err != nil {
 				return ctrl.Result{}, err
@@ -87,12 +87,11 @@ func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result
 	} else {
 		if hasNtrFinalizer(o) {
 			removeSubscribeAnnotation(o, mon)
-			logger.Info("remove subscriber annotation", "name", mon.Name, "annotation", mon.Annotations["subscribers"])
+			// logger.Info("remove subscriber annotation", "name", mon.Name, "annotation", mon.Annotations["subscribers"])
 			if err := r.Update(context.Background(), mon); err != nil {
 				return ctrl.Result{}, err
 			}
 
-			logger.Info("remove finalizer", "name", o.Name)
 			removeNtrFinalizer(o)
 			if err := r.Update(context.Background(), o); err != nil {
 				return ctrl.Result{}, err
