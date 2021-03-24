@@ -23,47 +23,56 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// NotificationTriggerSpec defines the desired state of NotificationTrigger
-type NotificationTriggerSpec struct {
+type MonitorResult struct {
+	Status   string `json:"status"`
+	Value    string `json:"value,omitempty"`
+	LastTime string `json:"lastFetchTime"`
+}
+
+// MonitorSpec defines the desired state of Monitor
+type MonitorSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of NotificationTrigger. Edit NotificationTrigger_types.go to remove/update
-	NotificationName string `json:"notification"`
-	MonitorName      string `json:"monitor"`
-	WatchFieldPath   string `json:"watchFieldPath"`
-	Op               string `json:"op"`
-	Operand          string `json:"operand"`
+	URL      string `json:"url"`
+	Body     string `json:"body"`
+	Interval int    `json:"interval"`
 }
 
-// NotificationTriggerStatus defines the observed state of NotificationTrigger
-type NotificationTriggerStatus struct {
+// MonitorStatus defines the observed state of Monitor
+type MonitorStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// FIXME: Uncomment next line. (client's Status().Update() requeue on adding entry)
+	// Results  []MonitorResult `json:"results,omitempty"`
+	Result MonitorResult `json:"result"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:shortName=ntr
+// +kubebuilder:resource:shortName=mon
+// +kubebuilder:printcolumn:name="URL",type=string,JSONPath=`.spec.url`
+// +kubebuilder:printcolumn:name="Interval",type=string,JSONPath=`.spec.interval`
 
-// NotificationTrigger is the Schema for the notificationtriggers API
-type NotificationTrigger struct {
+// Monitor is the Schema for the monitors API
+type Monitor struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   NotificationTriggerSpec   `json:"spec,omitempty"`
-	Status NotificationTriggerStatus `json:"status,omitempty"`
+	Spec   MonitorSpec   `json:"spec,omitempty"`
+	Status MonitorStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// NotificationTriggerList contains a list of NotificationTrigger
-type NotificationTriggerList struct {
+// MonitorList contains a list of Monitor
+type MonitorList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []NotificationTrigger `json:"items"`
+	Items           []Monitor `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&NotificationTrigger{}, &NotificationTriggerList{})
+	SchemeBuilder.Register(&Monitor{}, &MonitorList{})
 }

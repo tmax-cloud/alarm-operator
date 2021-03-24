@@ -4,3 +4,7 @@ metadata:
   name: notificationtrigger-sample
 spec:
   notification: email-notification-sample
+  monitor: monitor-sample
+  watchFieldPath: hits.total.value
+  op: gt
+  operand: "0"

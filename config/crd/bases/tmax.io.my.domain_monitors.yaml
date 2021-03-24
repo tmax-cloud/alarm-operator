@@ -6,23 +6,29 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: notificationtriggers.tmax.io.my.domain
+  name: monitors.tmax.io.my.domain
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.url
+    name: URL
+    type: string
+  - JSONPath: .spec.interval
+    name: Interval
+    type: string
   group: tmax.io.my.domain
   names:
-    kind: NotificationTrigger
-    listKind: NotificationTriggerList
-    plural: notificationtriggers
+    kind: Monitor
+    listKind: MonitorList
+    plural: monitors
     shortNames:
-    - ntr
-    singular: notificationtrigger
+    - mon
+    singular: monitor
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: NotificationTrigger is the Schema for the notificationtriggers
-        API
+      description: Monitor is the Schema for the monitors API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -37,29 +43,38 @@ spec:
         metadata:
           type: object
         spec:
-          description: NotificationTriggerSpec defines the desired state of NotificationTrigger
+          description: MonitorSpec defines the desired state of Monitor
           properties:
-            monitor:
+            body:
               type: string
-            notification:
-              description: Foo is an example field of NotificationTrigger. Edit NotificationTrigger_types.go
-                to remove/update
-              type: string
-            op:
-              type: string
-            operand:
-              type: string
-            watchFieldPath:
+            interval:
+              type: integer
+            url:
               type: string
           required:
-          - monitor
-          - notification
-          - op
-          - operand
-          - watchFieldPath
+          - body
+          - interval
+          - url
           type: object
         status:
-          description: NotificationTriggerStatus defines the observed state of NotificationTrigger
+          description: MonitorStatus defines the observed state of Monitor
+          properties:
+            result:
+              description: 'FIXME: Uncomment next line. (client''s Status().Update()
+                requeue on adding entry) Results  []MonitorResult `json:"results,omitempty"`'
+              properties:
+                lastFetchTime:
+                  type: string
+                status:
+                  type: string
+                value:
+                  type: string
+              required:
+              - lastFetchTime
+              - status
+              type: object
+          required:
+          - result
           type: object
       type: object
   version: v1alpha1

@@ -25,6 +25,26 @@ rules:
 - apiGroups:
   - tmax.io.my.domain
   resources:
+  - monitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tmax.io.my.domain
+  resources:
+  - monitors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - tmax.io.my.domain
+  resources:
   - notifications
   verbs:
   - create
