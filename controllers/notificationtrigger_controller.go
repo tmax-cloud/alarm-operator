@@ -40,8 +40,8 @@ type NotificationTriggerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=tmax.io.my.domain,resources=notificationtriggers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=tmax.io.my.domain,resources=notificationtriggers/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=alarm.tmax.io,resources=notificationtriggers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=alarm.tmax.io,resources=notificationtriggers/status,verbs=get;update;patch
 
 func (r *NotificationTriggerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()

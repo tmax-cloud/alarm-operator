@@ -56,10 +56,10 @@ type NotificationReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=tmax.io.my.domain,resources=notifications,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=tmax.io.my.domain,resources=notifications/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=tmax.io.my.domain,resources=smtpconfigs,verbs=get;list;watch;
-// +kubebuilder:rbac:groups=tmax.io.my.domain,resources=smtpconfigs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=alarm.tmax.io,resources=notifications,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=alarm.tmax.io,resources=notifications/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=alarm.tmax.io,resources=smtpconfigs,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=alarm.tmax.io,resources=smtpconfigs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;
 

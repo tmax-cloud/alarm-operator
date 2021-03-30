@@ -2,10 +2,10 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/tmax.io.my.domain_notifications.yaml
-- bases/tmax.io.my.domain_notificationtriggers.yaml
-- bases/tmax.io.my.domain_smtpconfigs.yaml
-- bases/tmax.io.my.domain_monitors.yaml
+- bases/alarm.tmax.io_notifications.yaml
+- bases/alarm.tmax.io_notificationtriggers.yaml
+- bases/alarm.tmax.io_smtpconfigs.yaml
+- bases/alarm.tmax.io_monitors.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

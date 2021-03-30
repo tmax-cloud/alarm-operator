@@ -5,7 +5,7 @@ metadata:
   name: monitor-viewer-role
 rules:
 - apiGroups:
-  - tmax.io.my.domain
+  - alarm.tmax.io
   resources:
   - monitors
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - tmax.io.my.domain
+  - alarm.tmax.io
   resources:
   - monitors/status
   verbs:

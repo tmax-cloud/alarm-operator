@@ -5,7 +5,7 @@ metadata:
   name: monitor-editor-role
 rules:
 - apiGroups:
-  - tmax.io.my.domain
+  - alarm.tmax.io
   resources:
   - monitors
   verbs:
@@ -17,7 +17,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - tmax.io.my.domain
+  - alarm.tmax.io
   resources:
   - monitors/status
   verbs:

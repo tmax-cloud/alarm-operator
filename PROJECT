@@ -1,18 +1,18 @@
-domain: my.domain
+domain: tmax.io
 layout: go.kubebuilder.io/v2
 projectName: alarm-operator
 repo: github.com/tmax-cloud/alarm-operator
 resources:
-- group: tmax.io
+- group: alarm
   kind: Notification
   version: v1alpha1
-- group: tmax.io
+- group: alarm
   kind: NotificationTrigger
   version: v1alpha1
-- group: tmax.io
+- group: alarm
   kind: SMTPConfig
   version: v1alpha1
-- group: tmax.io
+- group: alarm
   kind: Monitor
   version: v1alpha1
 version: 3-alpha

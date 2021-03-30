@@ -47,8 +47,8 @@ type MonitorReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=tmax.io.my.domain,resources=monitors,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=tmax.io.my.domain,resources=monitors/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=alarm.tmax.io,resources=monitors,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=alarm.tmax.io,resources=monitors/status,verbs=get;update;patch
 
 func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
