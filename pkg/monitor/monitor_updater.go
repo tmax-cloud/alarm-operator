@@ -37,12 +37,10 @@ func (r *MonitorUpdater) Handle(ctx context.Context) error {
 }
 
 func (r *MonitorUpdater) handle(ctx context.Context) (context.Context, error) {
-
 	logger := r.Logger.WithName("MonitorUpdater")
 
 	o := &tmaxiov1alpha1.Monitor{}
-	err := r.Client.Get(ctx, r.Target, o)
-	if err != nil {
+	if err := r.Client.Get(ctx, r.Target, o); err != nil {
 		return ctx, err
 	}
 
@@ -60,29 +58,29 @@ func (r *MonitorUpdater) handle(ctx context.Context) (context.Context, error) {
 
 	result.UpdatedAt = time.Now().Format(time.RFC3339)
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
-		result.Status = "Success"
 		dat, err := ioutil.ReadAll(res.Body)
 		if err != nil {
 			return ctx, err
 		}
 		defer res.Body.Close()
 		result.Value = string(dat)
+		result.Status = "Success"
 		ctx = cron.WithData(ctx, dat)
 	} else {
 		result.Status = "Fail"
 	}
 
-	if len(result.Value) > tmaxiov1alpha1.ValueSizeLimit {
-		result.Value = tmaxiov1alpha1.ValueReplacement
+	latestIdx := len(o.Status.History) - 1
+	if len(o.Status.History) > 0 && len(o.Status.History[latestIdx].Value) > tmaxiov1alpha1.ValueSizeLimit {
+		o.Status.History[latestIdx].Value = tmaxiov1alpha1.ValueReplacement
 	}
-
 	o.Status.History = append(o.Status.History, result)
 	if len(o.Status.History) > tmaxiov1alpha1.HistoryLimit {
 		start := len(o.Status.History) - tmaxiov1alpha1.HistoryLimit
 		o.Status.History = o.Status.History[start:]
 	}
 
-	logger.Info("Fetched", "status", result.Status)
+	logger.Info("Update", "value", result.Status)
 	err = r.Client.Status().Update(context.Background(), o)
 	if err != nil {
 		return ctx, err
