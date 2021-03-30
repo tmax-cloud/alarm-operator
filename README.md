@@ -22,9 +22,9 @@ Alarm-operator provides notification mechanism based on kubernetes.
     # Edit SMTP account yours in smtp_auth_sample.yaml
     vi smtp_auth_sample.yaml
     kubectl apply -f smtp_auth_sample.yaml
-    # Edit SMTP information in tmax.io_v1alpha1_smtpconfig.yaml
-    vi tmax.io_v1alpha1_smtpconfig.yaml
-    kubectl apply -f tmax.io_v1alpha1_smtpconfig.yaml
+    # Edit SMTP information in smtpconfig.yaml
+    vi smtpconfig.yaml
+    kubectl apply -f smtpconfig.yaml
     ```
 
 3. Generate Notification resource

@@ -23,5 +23,4 @@ bin
 *.swo
 *~
 
-
-config/samples/*.yaml
+config/samples/smtp_auth_sample.yaml

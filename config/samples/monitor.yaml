@@ -1,0 +1,8 @@
+apiVersion: alarm.tmax.io/v1alpha1
+kind: Monitor
+metadata:
+  name: monitor-sample
+spec:
+  url: http://172.22.11.2:31292/image-scanning-reg-test/_search
+  body: '{"query":{"range":{"result.summary.High":{"gt": 0}}},"_source":["image","result.summary"]}'
+  interval: 10
