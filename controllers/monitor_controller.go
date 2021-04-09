@@ -134,21 +134,20 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 			result := tmaxiov1alpha1.NotificationTriggerResult{}
 			if eval(v, nt.Spec.Operand, nt.Spec.Op) {
-				result.Triggered = true
-				result.UpdatedAt = time.Now().Format(time.RFC3339)
-
 				n := &tmaxiov1alpha1.Notification{}
 				if err := r.Get(ctx, types.NamespacedName{Namespace: nt.Namespace, Name: nt.Spec.Notification}, n); err != nil {
-					logger.Error(err, "failed to get notification")
-					return err
+					result.Message = "failed to get notification from resource"
+					logger.Error(err, result.Message)
 				}
-
 				if err = sendNotification(*n); err != nil {
-					logger.Error(err, "failed to send notification")
+					result.Message = "failed to send notification"
+					logger.Error(err, result.Message)
 				}
+				result.Triggered = true
+				result.UpdatedAt = time.Now().Format(time.RFC3339)
 			} else {
-				result.Message = fmt.Sprintf("condition not matched")
 				result.Triggered = false
+				result.Message = fmt.Sprintf("condition not matched")
 			}
 
 			nt.Status.History = append(nt.Status.History, result)

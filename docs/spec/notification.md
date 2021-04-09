@@ -25,7 +25,7 @@ from|Yes|string|The email account of sender
 to|Yes|string|The email account of receiver
 subject|Yes|string|The subject of mail
 body|Yes|string|The body of mail
-cc|No|string|
+cc|No|string|-
 
 ### webhook property (not support yet)
 
@@ -47,5 +47,5 @@ message|Yes|string|-
 
 **FieldName**|**Requried**|**Type**|**Description**
 :-----:|:-----:|:-----:|:-----:
-type|Yes|string|Notification type(email, webhook, slack, etc)
-endpoint|Yes|string|The endpoint for notification. (http://[notification_name].[notifier's_clusterip].nip.io)
+type|-|string|Notification type(email, webhook, slack, etc)
+endpoint|-|string|The endpoint for notification. (http://[notification_name].[notifier's_clusterip].nip.io)
