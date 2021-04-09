@@ -16,9 +16,18 @@ limitations under the License.
 
 package controllers
 
+import "C"
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"github.com/Jeffail/gabs"
+	"io/ioutil"
+	"k8s.io/apimachinery/pkg/types"
+	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -28,14 +37,13 @@ import (
 
 	tmaxiov1alpha1 "github.com/tmax-cloud/alarm-operator/api/v1alpha1"
 	"github.com/tmax-cloud/alarm-operator/pkg/cron"
-	"github.com/tmax-cloud/alarm-operator/pkg/monitor"
 )
 
-const monFinalizer = "monitor.finalizer.alarm-operator.tmax.io"
-
 var s *cron.Scheduler
+var httpcli *http.Client
 
 func init() {
+	httpcli = &http.Client{Transport: http.DefaultTransport}
 	s = cron.NewScheduler(context.Background(), 100)
 	go s.Start()
 }
@@ -51,6 +59,7 @@ type MonitorReconciler struct {
 // +kubebuilder:rbac:groups=alarm.tmax.io,resources=monitors/status,verbs=get;update;patch
 
 func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+	const finalizer = "monitor.finalizer.alarm-operator.tmax.io"
 	ctx := context.Background()
 	logger := r.Log.WithValues("reconcile", req.NamespacedName)
 
@@ -63,71 +72,231 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("process")
-
-	if o.ObjectMeta.DeletionTimestamp.IsZero() {
-		if !hasMonFinalizer(o) {
-			o.ObjectMeta.Finalizers = append(o.ObjectMeta.Finalizers, monFinalizer)
-			if err := r.Update(context.Background(), o); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-
-		var handler cron.TaskFunc
-		task := &monitor.MonitorUpdater{
-			Client: r.Client,
-			Target: req.NamespacedName,
-			Logger: logger,
-		}
-		handler = task.Handle
-
-		subs := strings.Split(o.Annotations["subscribers"], ",")
-		if len(subs) > 0 && subs[0] != "" {
-			postTask := &monitor.PublishTrigger{
-				Client: r.Client,
-				Target: req.NamespacedName,
-				Logger: logger,
-			}
-
-			handler = task.HandleFunc(postTask.Handle)
-		}
-
-		s.Schedule(o.Name).Every(o.Spec.Interval).Second().Do(handler)
-	} else {
-		if hasMonFinalizer(o) {
-			removeMonFinalizer(o)
-			s.Cancel(o.Name)
-			if err := r.Update(context.Background(), o); err != nil {
+	if !o.ObjectMeta.DeletionTimestamp.IsZero() {
+		if hasFinalizer(o.ObjectMeta, finalizer) {
+			removeFinalizer(&o.ObjectMeta, finalizer)
+			s.Schedule(o.Name).Cancel()
+			if err := r.Update(ctx, o); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
 		return ctrl.Result{}, nil
 	}
 
-	// FIXME:
-	// o.Status.Results = append(o.Status.Results, result)
+	if !hasFinalizer(o.ObjectMeta, finalizer) {
+		addFinalizer(&o.ObjectMeta, finalizer)
+		if err := r.Update(ctx, o); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	s.Schedule(o.Name).Every(o.Spec.Interval).Second().Do(func(ctx context.Context) error {
+		retCode, dat, err := fetchResource(ctx, o.Spec.URL, []byte(o.Spec.Body))
+		result := tmaxiov1alpha1.MonitorResult{
+			Status:    "Success",
+			Value:     string(dat),
+			UpdatedAt: time.Now().Format(time.RFC3339),
+		}
+		if err != nil || retCode >= 300 {
+			result.Status = "Fail"
+		}
+
+		latestIdx := len(o.Status.History) - 1
+		if len(o.Status.History) > 0 && len(o.Status.History[latestIdx].Value) > tmaxiov1alpha1.ValueSizeLimit {
+			o.Status.History[latestIdx].Value = tmaxiov1alpha1.ValueReplacement
+		}
+		o.Status.History = append(o.Status.History, result)
+		if len(o.Status.History) > tmaxiov1alpha1.HistoryLimit {
+			start := len(o.Status.History) - tmaxiov1alpha1.HistoryLimit
+			o.Status.History = o.Status.History[start:]
+		}
+
+		logger.Info("Update", "value", result.Status)
+		if err = r.Status().Update(ctx, o); err != nil {
+			return err
+		}
+
+		// FIXME: next trigger handling logic must be seperated.
+		subscribers := parseSubscribers(o)
+		for _, s := range subscribers {
+			nt := &tmaxiov1alpha1.NotificationTrigger{}
+			if err := r.Get(ctx, s, nt); err != nil {
+				logger.Error(err, "failed to get notification trigger")
+				return err
+			}
+
+			jsonParsed, err := gabs.ParseJSON(dat)
+			if err != nil {
+				return err
+			}
+			v := jsonParsed.Path(nt.Spec.FieldPath).Data()
+			logger.Info("parsed field", "value", v)
+
+			result := tmaxiov1alpha1.NotificationTriggerResult{}
+			if eval(v, nt.Spec.Operand, nt.Spec.Op) {
+				result.Triggered = true
+				result.UpdatedAt = time.Now().Format(time.RFC3339)
+
+				n := &tmaxiov1alpha1.Notification{}
+				if err := r.Get(ctx, types.NamespacedName{Namespace: nt.Namespace, Name: nt.Spec.Notification}, n); err != nil {
+					logger.Error(err, "failed to get notification")
+					return err
+				}
+
+				if err = sendNotification(*n); err != nil {
+					logger.Error(err, "failed to send notification")
+				}
+			} else {
+				result.Message = fmt.Sprintf("condition not matched")
+				result.Triggered = false
+			}
+
+			nt.Status.History = append(nt.Status.History, result)
+			if len(nt.Status.History) > tmaxiov1alpha1.HistoryLimit {
+				start := len(nt.Status.History) - tmaxiov1alpha1.HistoryLimit
+				nt.Status.History = nt.Status.History[start:]
+			}
+
+			if err := r.Status().Update(ctx, nt); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 
 	return ctrl.Result{}, nil
 }
 
-func hasMonFinalizer(m *tmaxiov1alpha1.Monitor) bool {
-	for _, f := range m.ObjectMeta.Finalizers {
-		if f == monFinalizer {
-			return true
+func fetchResource(ctx context.Context, url string, body []byte) (int, []byte, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewBuffer(body))
+	if err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	response, err := httpcli.Do(req)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+	defer response.Body.Close()
+	body, err = ioutil.ReadAll(response.Body)
+	return response.StatusCode, body, err
+}
+
+func parseSubscribers(o *tmaxiov1alpha1.Monitor) []types.NamespacedName {
+	ret := []types.NamespacedName{}
+	subscribers := strings.Split(o.Annotations["subscribers"], ",")
+	for _, subscriber := range subscribers {
+		if subscriber == "" {
+			continue
+		}
+		tokens := strings.Split(subscriber, "/")
+		ret = append(ret, types.NamespacedName{Namespace: tokens[0], Name: tokens[1]})
+	}
+	return ret
+}
+
+func eval(op1 interface{}, op2 string, op string) bool {
+	switch op {
+	case "gt", "<":
+		switch op1 := op1.(type) {
+		case int:
+			operand, _ := strconv.Atoi(op2)
+			if op1 > operand {
+				return true
+			}
+		case float64:
+			operand, _ := strconv.Atoi(op2)
+			if op1 > float64(operand) {
+				return true
+			}
+		case string:
+			if op1 > op2 {
+				return true
+			}
+		}
+	case "gte", "<=":
+		switch op1 := op1.(type) {
+		case int:
+			operand, _ := strconv.Atoi(op2)
+			if op1 >= operand {
+				return true
+			}
+		case float64:
+			operand, _ := strconv.Atoi(op2)
+			if op1 >= float64(operand) {
+				return true
+			}
+		case string:
+			if op1 >= op2 {
+				return true
+			}
+		}
+	case "eq", "==":
+		switch op1 := op1.(type) {
+		case int:
+			operand, _ := strconv.Atoi(op2)
+			if op1 == operand {
+				return true
+			}
+		case float64:
+			operand, _ := strconv.Atoi(op2)
+			if op1 == float64(operand) {
+				return true
+			}
+		case string:
+			if op1 == op2 {
+				return true
+			}
+		}
+	case "lte", ">=":
+		switch op1 := op1.(type) {
+		case int:
+			operand, _ := strconv.Atoi(op2)
+			if op1 <= operand {
+				return true
+			}
+		case float64:
+			operand, _ := strconv.Atoi(op2)
+			if op1 <= float64(operand) {
+				return true
+			}
+		case string:
+			if op1 <= op2 {
+				return true
+			}
+		}
+	case "lt", ">":
+		switch op1 := op1.(type) {
+		case int:
+			operand, _ := strconv.Atoi(op2)
+			if op1 < operand {
+				return true
+			}
+		case float64:
+			operand, _ := strconv.Atoi(op2)
+			if op1 < float64(operand) {
+				return true
+			}
+		case string:
+			if op1 < op2 {
+				return true
+			}
 		}
 	}
+
 	return false
 }
 
-func removeMonFinalizer(m *tmaxiov1alpha1.Monitor) {
-	newFinalizers := []string{}
-	for _, f := range m.ObjectMeta.Finalizers {
-		if f == monFinalizer {
-			continue
-		}
-		newFinalizers = append(newFinalizers, f)
+func sendNotification(o tmaxiov1alpha1.Notification) error {
+	if o.Status.EndPoint == "" {
+		return fmt.Errorf("notification's endpoint not prepared")
 	}
-	m.ObjectMeta.Finalizers = newFinalizers
+	_, err := http.Post(o.Status.EndPoint, "application/json", bytes.NewBuffer([]byte("")))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {

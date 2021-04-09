@@ -2,7 +2,6 @@ package cron
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 )
@@ -16,10 +15,10 @@ type Scheduler struct {
 	mutex *sync.RWMutex
 }
 
-func NewScheduler(ctx context.Context, size int) *Scheduler {
+func NewScheduler(ctx context.Context, nConcurrentJob int) *Scheduler {
 	return &Scheduler{
 		ctx:   ctx,
-		ch:    make(chan Job, size),
+		ch:    make(chan Job, nConcurrentJob),
 		jobs:  make(map[string]*Job),
 		mutex: new(sync.RWMutex),
 	}
@@ -30,12 +29,10 @@ func (r *Scheduler) Start() {
 		select {
 		case job, ok := <-r.ch:
 			if !ok {
-				fmt.Println("closed job")
 				continue
 			}
 			go job.Run()
 		case <-r.ctx.Done():
-			fmt.Println("scheduler done")
 			return
 		}
 	}
@@ -80,8 +77,7 @@ func (r *Scheduler) Do(taskFn TaskFunc) *Scheduler {
 
 	r.jobs[current].taskFunc = taskFn
 	if r.jobs[current].isRunning {
-		r.jobs[current].cancel()
-		r.jobs[current] = r.jobs[current].Clone()
+		return r
 	}
 
 	this := r.jobs[current]
@@ -103,8 +99,8 @@ func (r *Scheduler) Do(taskFn TaskFunc) *Scheduler {
 	return r
 }
 
-func (r *Scheduler) Cancel(name string) {
-	if j, ok := r.jobs[name]; ok {
+func (r *Scheduler) Cancel() {
+	if j, ok := r.jobs[current]; ok {
 		j.cancel()
 	}
 }
