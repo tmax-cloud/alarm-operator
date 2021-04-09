@@ -3,7 +3,6 @@ kind: SMTPConfig
 metadata:
   name: smtpconfig-sample
 spec:
-  # Add fields here
   host: smtp.gmail.com
   port: 587
   secret: tmaxcloud-announcer-credit

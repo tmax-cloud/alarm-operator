@@ -3,7 +3,6 @@ kind: Notification
 metadata:
   name: slack-notification-sample
 spec:
-  # Add fields here
   slack:
     account: my-slack-account
     workspace: hypercloud

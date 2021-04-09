@@ -16,7 +16,7 @@ Alarm-operator provides notification mechanism based on kubernetes.
     make install && make deploy
     ```
 
-### Generate notification endpoint and Test notification
+### Generate Notification resource and Test notification endpoint
 1. Generate SMTP credential Secret and SMTPConfig
     ```bash
     cd config/sample/
@@ -39,10 +39,10 @@ Alarm-operator provides notification mechanism based on kubernetes.
     curl -XPOST <generated_endpoint_url>
     ```
 
-### NotificationTrigger and Monitor
+### Generate NotificationTrigger and Monitor resource and check
 1. Generate Monitor resource
     ```bash
-    # Edit information monitor.yaml
+    # Edit monitor.yaml  before applying
     kubectl apply -f monitor.yaml
     ```
 
