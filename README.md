@@ -6,17 +6,18 @@ Alarm-operator provides notification mechanism based on kubernetes.
 
 * go version v1.15.7+.
 * kubectl version v1.18.6+.
-* [ko](https://github.com/google/ko) version v0.6.0+
 * Access to a Kubernetes v1.19.4+ cluster.
 
 ## Getting started
 
+### Installation
 1. Install operator
     ```bash
     make install && make deploy
     ```
 
-2. Generate SMTP credential Secret and SMTPConfig
+### Generate notification endpoint and Test notification
+1. Generate SMTP credential Secret and SMTPConfig
     ```bash
     cd config/sample/
     # Edit SMTP account yours in smtp_auth_sample.yaml
@@ -27,23 +28,46 @@ Alarm-operator provides notification mechanism based on kubernetes.
     kubectl apply -f smtpconfig.yaml
     ```
 
-3. Generate Notification resource
+2. Generate Notification resource
     ```bash
     # Edit information email_notification.yaml
     kubectl apply -f email_notification.yaml
     ```
 
-4. Send GET request to generated notification's Endpoint in pod
+3. Send GET request to generated notification's Endpoint in pod
     ```bash
-    curl <generated_endpoint_url>
+    curl -XPOST <generated_endpoint_url>
     ```
 
+### NotificationTrigger and Monitor
+1. Generate Monitor resource
+    ```bash
+    # Edit information monitor.yaml
+    kubectl apply -f monitor.yaml
+    ```
+
+2. Verify fetching resource correctly 
+    ```bash
+    kubectl get monitor <generated_monitor_name> -o yaml
+    ```
+   
+3. Generate NotificationTrigger resource
+    ```bash
+    # Edit information notificationtrigger.yaml
+    kubectl apply -f notificationtrigger.yaml
+    ```
+
+4. Verify if trigger working correctly
+    ```bash
+    kubectl get monitor <generated_notificationtrigger_name> -o yaml
+    ```
 
 ## Feature
 
 * Mail notification
 * Webhook notification (working)
 * Slack notification (working)
+* Monitoring resource and specify condition to trigger notification
 
 ## Development
 

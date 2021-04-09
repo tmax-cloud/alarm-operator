@@ -3,7 +3,6 @@
 ## Prerequisites
 
 * `kubectl` is installed
-* `ko` is installed
 
 ## Install procedure
 

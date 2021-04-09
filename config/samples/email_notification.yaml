@@ -3,10 +3,9 @@ kind: Notification
 metadata:
   name: email-notification-sample
 spec:
-  # Add fields here
   email:
     smtpcfg: smtpconfig-sample
-    from: taejune_ahn@tmax.co.kr
-    to: taejune_ahn@tmax.co.kr
-    subject: "[Notification] email-notification-sample"
-    body: "Hello"
+    from: no_reply@tmax.co.kr
+    to: all@tmax.co.kr
+    subject: "[INFO] Notification from alarm-operator"
+    body: "Test message"
