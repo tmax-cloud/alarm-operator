@@ -291,8 +291,15 @@ func sendNotification(o tmaxiov1alpha1.Notification) error {
 	if o.Status.EndPoint == "" {
 		return fmt.Errorf("notification's endpoint not prepared")
 	}
-	_, err := http.Post(o.Status.EndPoint, "application/json", bytes.NewBuffer([]byte("")))
+
+	req, err := http.NewRequest("POST", o.Status.EndPoint, bytes.NewBuffer([]byte("")))
 	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", o.Status.ApiKey)
+
+	if _, err = http.DefaultClient.Do(req); err != nil {
 		return err
 	}
 	return nil
