@@ -11,10 +11,18 @@ Alarm-operator provides notification mechanism based on kubernetes.
 ## Getting started
 
 ### Installation
-1. Install operator
-    ```bash
-    make install && make deploy
-    ```
+1. Build notifier server and push to your registry
+   ```bash
+   export REG=<enter_your_registry>
+   make docker-build
+   make docker-push
+   ```
+
+2. Install operator
+   ```bash
+   make install && make deploy
+   ```
+
 
 ### Generate Notification resource and Test notification endpoint
 1. Generate SMTP credential Secret and SMTPConfig
