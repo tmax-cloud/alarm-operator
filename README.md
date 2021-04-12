@@ -20,9 +20,6 @@ Alarm-operator provides notification mechanism based on kubernetes.
 1. Generate SMTP credential Secret and SMTPConfig
     ```bash
     cd config/sample/
-    # Edit SMTP account yours in smtp_auth_sample.yaml
-    vi smtp_auth_sample.yaml
-    kubectl apply -f smtp_auth_sample.yaml
     # Edit SMTP information in smtpconfig.yaml
     vi smtpconfig.yaml
     kubectl apply -f smtpconfig.yaml

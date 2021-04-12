@@ -20,7 +20,7 @@ It must has a one of next field.
 
 **FieldName**|**Requried**|**Type**|**Description**
 :-----:|:-----:|:-----:|:-----:
-smtpcfg|Yes|string|The name of SMTPConfig
+smtpcfg|Yes|string|configmap name which should contains host, port, username, password field
 from|Yes|string|The email account of sender
 to|Yes|string|The email account of receiver
 subject|Yes|string|The subject of mail
