@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,6 +22,9 @@ import (
 var logger *zap.SugaredLogger
 
 func main() {
+	var port int
+	flag.IntVar(&port, "port", 8080, "port number")
+	flag.Parse()
 
 	redisURL, _ := url.Parse(os.Getenv("REDIS_URL"))
 	redisPort, _ := strconv.Atoi(strings.TrimPrefix(redisURL.Path, "/"))
@@ -62,13 +66,13 @@ func main() {
 	router.Handle("/", handler.NewNotificationHandler(ctx, r, q, logger)).Methods("POST")
 
 	s := &http.Server{
-		Addr:           ":8080",
+		Addr:           ":" + strconv.Itoa(port),
 		Handler:        router,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	logger.Info("Listening on :8080")
+	logger.Info("Listening on ", port)
 	logger.Fatal(s.ListenAndServe())
 }
