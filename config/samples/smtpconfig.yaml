@@ -1,8 +1,9 @@
-apiVersion: alarm.tmax.io/v1alpha1
-kind: SMTPConfig
+apiVersion: v1
+kind: ConfigMap
 metadata:
   name: smtpconfig-sample
-spec:
-  host: smtp.gmail.com
-  port: 587
-  secret: tmaxcloud-announcer-credit
+data:
+  host: "smtp.gmail.com"
+  port: "587"
+  username: "noreply@tmaxcloud.io"
+  password: "enter_your_password"

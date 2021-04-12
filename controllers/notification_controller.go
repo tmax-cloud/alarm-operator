@@ -24,6 +24,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -111,8 +112,7 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 	var rtype string
 
 	if &o.Spec.Email != nil {
-
-		smtpcfg := &tmaxiov1alpha1.SMTPConfig{}
+		smtpcfg := &corev1.ConfigMap{}
 		// XXX: Is SMTPConfig should be in same namespace?
 		err := r.Client.Get(ctx, types.NamespacedName{Name: o.Spec.Email.SMTPConfig, Namespace: o.Namespace}, smtpcfg)
 		if err != nil {
@@ -122,44 +122,16 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 			return "", nil, err
 		}
 
-		smtpSecret := &corev1.Secret{}
-		// XXX: Is Secret should be in same namespace?
-		err = r.Client.Get(ctx, types.NamespacedName{Name: smtpcfg.Spec.CredentialSecret, Namespace: o.Namespace}, smtpSecret)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				return "", nil, err
-			}
-			return "", nil, err
-		}
-
-		var username string
-		var password string
-
-		switch smtpSecret.Type {
-		case corev1.SecretTypeOpaque, corev1.SecretTypeBasicAuth:
-			bUsername, ok := smtpSecret.Data[corev1.BasicAuthUsernameKey]
-			if !ok {
-				return "", nil, fmt.Errorf("username not found: %s", corev1.BasicAuthUsernameKey)
-			}
-			username = string(bUsername)
-			bPassword, ok := smtpSecret.Data[corev1.BasicAuthPasswordKey]
-			if !ok {
-				return "", nil, fmt.Errorf("password not found: %s", corev1.BasicAuthPasswordKey)
-			}
-			password = string(bPassword)
-		default:
-			// TODO: load from controller configmap
-		}
-
 		rtype = "email"
+		port, _ := strconv.Atoi(smtpcfg.Data["port"])
 		ret = notification.MailNotification{
 			SMTPConnection: notification.SMTPConnection{
-				Host: smtpcfg.Spec.Host,
-				Port: smtpcfg.Spec.Port,
+				Host: smtpcfg.Data["host"],
+				Port: port,
 			},
 			SMTPAccount: notification.SMTPAccount{
-				Username: username,
-				Password: password,
+				Username: smtpcfg.Data["username"],
+				Password: smtpcfg.Data["password"],
 			},
 			MailMessage: notification.MailMessage{
 				From:    o.Spec.Email.From,
