@@ -4,7 +4,6 @@
 resources:
 - bases/alarm.tmax.io_notifications.yaml
 - bases/alarm.tmax.io_notificationtriggers.yaml
-- bases/alarm.tmax.io_smtpconfigs.yaml
 - bases/alarm.tmax.io_monitors.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
@@ -13,7 +12,6 @@ patchesStrategicMerge:
 # patches here are for enabling the conversion webhook for each CRD
 #- patches/webhook_in_notifications.yaml
 #- patches/webhook_in_notificationtriggers.yaml
-#- patches/webhook_in_smtpconfigs.yaml
 #- patches/webhook_in_monitors.yaml
 # +kubebuilder:scaffold:crdkustomizewebhookpatch
 
@@ -21,7 +19,6 @@ patchesStrategicMerge:
 # patches here are for enabling the CA injection for each CRD
 #- patches/cainjection_in_notifications.yaml
 #- patches/cainjection_in_notificationtriggers.yaml
-#- patches/cainjection_in_smtpconfigs.yaml
 #- patches/cainjection_in_monitors.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
 
