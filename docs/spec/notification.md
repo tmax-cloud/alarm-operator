@@ -49,3 +49,4 @@ message|Yes|string|-
 :-----:|:-----:|:-----:|:-----:
 type|-|string|Notification type(email, webhook, slack, etc)
 endpoint|-|string|The endpoint for notification. (http://[notification_name].[notifier's_clusterip].nip.io)
+apikey|-|string|API key for request notification
