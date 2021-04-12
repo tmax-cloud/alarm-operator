@@ -89,15 +89,16 @@ func (r *NotificationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		return ctrl.Result{RequeueAfter: requeueDuration}, err
 	}
 
-	ret, err := ioutil.ReadAll(resp.Body)
+	dat, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error(err, "Failed to read response from notifier")
 		return ctrl.Result{}, err
 	}
 
 	defer resp.Body.Close()
-	logger.Info("Registered ", "response", string(ret))
+	logger.Info("Registered ", "name", o.Name, "type", notiType, "apikey", dat)
 
+	o.Status.ApiKey = string(dat)
 	if err := r.updateStatus(ctx, o); err != nil {
 		logger.Error(err, "Failed to update trigger")
 		return ctrl.Result{RequeueAfter: requeueDuration}, err
@@ -107,7 +108,6 @@ func (r *NotificationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 }
 
 func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context, o *tmaxiov1alpha1.Notification) (string, notification.Notification, error) {
-
 	var ret notification.Notification
 	var rtype string
 
@@ -153,7 +153,6 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 }
 
 func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1alpha1.Notification) error {
-
 	if &o.Spec.Email != nil {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeMail
 	} else if &o.Spec.Webhook != nil {
@@ -176,7 +175,6 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 			epHost = ip.String()
 		}
 	}
-
 	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.xip.io:%s", o.Name, epHost, u.Port())
 	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type)
 

@@ -15,7 +15,7 @@ func NewNotificationRegistry(dataSource Registry) *NotificationRegistry {
 	return &NotificationRegistry{ds: dataSource}
 }
 
-func (r *NotificationRegistry) Register(id string, noti Notification) error {
+func (r *NotificationRegistry) Register(id string, key string, noti Notification) error {
 
 	payload, err := json.Marshal(noti)
 	if err != nil {
@@ -24,11 +24,11 @@ func (r *NotificationRegistry) Register(id string, noti Notification) error {
 
 	switch noti.(type) {
 	case MailNotification, *MailNotification:
-		payload = []byte(strings.Join([]string{"mail", string(payload)}, ":"))
+		payload = []byte(strings.Join([]string{"mail", key, string(payload)}, ":"))
 	case WebhookNotification, *WebhookNotification:
-		payload = []byte(strings.Join([]string{"webhook", string(payload)}, ":"))
+		payload = []byte(strings.Join([]string{"webhook", key, string(payload)}, ":"))
 	case SlackNotification, *SlackNotification:
-		payload = []byte(strings.Join([]string{"slack", string(payload)}, ":"))
+		payload = []byte(strings.Join([]string{"slack", key, string(payload)}, ":"))
 	default:
 		return fmt.Errorf(fmt.Sprintf("unsupported notification type: %s\n", reflect.TypeOf(noti)))
 	}
@@ -36,16 +36,18 @@ func (r *NotificationRegistry) Register(id string, noti Notification) error {
 	return r.ds.Save(id, payload)
 }
 
-func (r *NotificationRegistry) Fetch(id string) (Notification, error) {
+func (r *NotificationRegistry) Fetch(id string) (string, Notification, error) {
 	data, err := r.ds.Load(id)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	// FIXME: too bad extraction
 	tokens := strings.Split(string(data), ":")
 	notiType := tokens[0]
-	noti := strings.Join(append([]string{}, tokens[1:]...), ":")
+	key := tokens[1]
+	// data may contains ':'
+	noti := strings.Join(append([]string{}, tokens[2:]...), ":")
 
 	// FIXME: dirty
 	switch notiType {
@@ -53,24 +55,24 @@ func (r *NotificationRegistry) Fetch(id string) (Notification, error) {
 		var dat MailNotification
 		err := json.Unmarshal([]byte(noti), &dat)
 		if err != nil {
-			return nil, err
+			return "", nil, err
 		}
-		return dat, nil
+		return key, dat, nil
 	case "webhook":
 		var dat WebhookNotification
 		err := json.Unmarshal([]byte(noti), &dat)
 		if err != nil {
-			return nil, err
+			return "", nil, err
 		}
-		return dat, nil
+		return key, dat, nil
 	case "slack":
 		var dat SlackNotification
 		err := json.Unmarshal([]byte(noti), &dat)
 		if err != nil {
-			return nil, err
+			return "", nil, err
 		}
-		return dat, nil
+		return key, dat, nil
 	}
 
-	return nil, fmt.Errorf("unknown type")
+	return "", nil, fmt.Errorf("unknown type")
 }

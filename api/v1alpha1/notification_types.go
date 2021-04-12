@@ -72,6 +72,7 @@ type NotificationStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	Type     NotificationType `json:"type,omitempty"`
 	EndPoint string           `json:"endpoint,omitempty"`
+	ApiKey   string           `json:"apikey,omitempty"`
 }
 
 // +kubebuilder:object:root=true
