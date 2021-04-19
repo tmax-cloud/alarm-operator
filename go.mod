@@ -3,8 +3,7 @@ module github.com/tmax-cloud/alarm-operator
 go 1.13
 
 require (
-	github.com/Jeffail/gabs v1.4.0
-	github.com/blend/go-sdk v1.20210316.2
+	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/go-logr/logr v0.1.0
 	github.com/go-redis/redis/v7 v7.4.0
 	github.com/gorilla/mux v1.8.0

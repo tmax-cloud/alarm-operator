@@ -16,12 +16,11 @@ limitations under the License.
 
 package controllers
 
-import "C"
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/Jeffail/gabs"
+	"github.com/Jeffail/gabs/v2"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/types"
 	"net/http"
