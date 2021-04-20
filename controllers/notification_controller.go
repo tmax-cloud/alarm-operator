@@ -63,6 +63,7 @@ type NotificationReconciler struct {
 // +kubebuilder:rbac:groups=alarm.tmax.io,resources=smtpconfigs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;
 
 func (r *NotificationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
