@@ -1,7 +1,11 @@
 package job
 
 import (
+	"bytes"
 	"crypto/tls"
+	"encoding/json"
+
+	"net/http"
 
 	"github.com/tmax-cloud/alarm-operator/pkg/notification"
 	"github.com/tmax-cloud/alarm-operator/pkg/notifier/background"
@@ -56,5 +60,16 @@ func (n *WebhookNotificationJob) Execute(job interface{}) error {
 
 func (n *SlackNotificationJob) Execute(job interface{}) error {
 	// TODO:
+	url := n.noti.Url
+	msg := n.noti.Message
+	reqbody, _ := json.Marshal(msg)
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqbody))
+
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
 	return nil
 }

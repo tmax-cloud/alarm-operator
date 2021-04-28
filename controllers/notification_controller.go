@@ -142,9 +142,14 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 			},
 		}
 
-	} else if &o.Spec.Webhook != nil {
-		// TODO:
 	} else if &o.Spec.Slack != nil {
+		// TODO:
+		rtype = "slack"
+		ret = notification.SlackNotification{
+			Url:     o.Spec.Slack.Url,
+			Message: o.Spec.Slack.Message,
+		}
+	} else if &o.Spec.Webhook != nil {
 		// TODO:
 	} else {
 		// TODO:

@@ -4,7 +4,5 @@ metadata:
   name: slack-notification-sample
 spec:
   slack:
-    account: my-slack-account
-    workspace: hypercloud
-    channel: announcements
-    message: "Test message from alarm-operator"
+    url: https://hooks.slack.com/services/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
+    message: "Test message from operator to slack"

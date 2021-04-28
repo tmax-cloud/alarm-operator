@@ -68,19 +68,15 @@ spec:
               type: object
             slack:
               properties:
-                account:
-                  type: string
-                channel:
-                  type: string
                 message:
                   type: string
-                workspace:
+                url:
+                  description: SenderAccountSecret string `json:"account"` Workspace           string
+                    `json:"workspace"` Channel             string `json:"channel"`
                   type: string
               required:
-              - account
-              - channel
               - message
-              - workspace
+              - url
               type: object
             webhook:
               properties:
