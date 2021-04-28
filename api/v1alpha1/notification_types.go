@@ -50,8 +50,8 @@ type SlackNotification struct {
 	//SenderAccountSecret string `json:"account"`
 	//Workspace           string `json:"workspace"`
 	//Channel             string `json:"channel"`
-	Url     string `json:"url"`
-	Message string `json:"message"`
+	SLACKConfig string `json:"slackconfig"`
+	Message     string `json:"message"`
 }
 
 // NotificationSpec defines the desired state of Notification

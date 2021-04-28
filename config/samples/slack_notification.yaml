@@ -4,5 +4,5 @@ metadata:
   name: slack-notification-sample
 spec:
   slack:
-    url: https://hooks.slack.com/services/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
+    slackconfig: slackconfig-sample
     message: "Test message from operator to slack"

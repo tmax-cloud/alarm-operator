@@ -143,12 +143,20 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 		}
 
 	} else if &o.Spec.Slack != nil {
-		// TODO:
+		slackcfg := &corev1.ConfigMap{}
+		err := r.Client.Get(ctx, types.NamespacedName{Name: o.Spec.Slack.SLACKConfig, Namespace: o.Namespace}, slackcfg)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				return "", nil, err
+			}
+			return "", nil, err
+		}
 		rtype = "slack"
 		ret = notification.SlackNotification{
-			Url:     o.Spec.Slack.Url,
+			Url:     slackcfg.Data["url"],
 			Message: o.Spec.Slack.Message,
 		}
+
 	} else if &o.Spec.Webhook != nil {
 		// TODO:
 	} else {
@@ -159,12 +167,13 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 }
 
 func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1alpha1.Notification) error {
+
 	if &o.Spec.Email != nil {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeMail
 	} else if &o.Spec.Slack != nil {
-		o.Status.Type = tmaxiov1alpha1.NotificationTypeWebhook
-	} else if &o.Spec.Webhook != nil {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeSlack
+	} else if &o.Spec.Webhook != nil {
+		o.Status.Type = tmaxiov1alpha1.NotificationTypeWebhook
 	} else {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeUnknown
 	}

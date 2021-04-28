@@ -70,13 +70,13 @@ spec:
               properties:
                 message:
                   type: string
-                url:
+                slackconfig:
                   description: SenderAccountSecret string `json:"account"` Workspace           string
                     `json:"workspace"` Channel             string `json:"channel"`
                   type: string
               required:
               - message
-              - url
+              - slackconfig
               type: object
             webhook:
               properties:
