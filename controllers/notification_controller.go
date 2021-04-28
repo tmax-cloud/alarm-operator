@@ -161,9 +161,9 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1alpha1.Notification) error {
 	if &o.Spec.Email != nil {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeMail
-	} else if &o.Spec.Webhook != nil {
-		o.Status.Type = tmaxiov1alpha1.NotificationTypeWebhook
 	} else if &o.Spec.Slack != nil {
+		o.Status.Type = tmaxiov1alpha1.NotificationTypeWebhook
+	} else if &o.Spec.Webhook != nil {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeSlack
 	} else {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeUnknown

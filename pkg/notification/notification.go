@@ -34,6 +34,6 @@ type SlackNotification struct {
 	//SenderAccountSecret string `json:"account"`
 	//Workspace           string `json:"workspace"`
 	//Channel             string `json:"channel"`
-	Url     string `json:"webhookurl"`
+	Url     string `json:"url"`
 	Message string `json:"message"`
 }
