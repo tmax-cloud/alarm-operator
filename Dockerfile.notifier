@@ -6,10 +6,13 @@ COPY go.mod go.mod
 COPY go.sum go.sum
 COPY pkg/ pkg/
 
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
+RUN update-ca-certificates
 RUN go mod tidy \
     && go get -u -d -v ./...
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-s -w' -o main main.go
 
 FROM scratch
 COPY --from=builder /tmp/tiny-golang-image /
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 CMD ["/main"]

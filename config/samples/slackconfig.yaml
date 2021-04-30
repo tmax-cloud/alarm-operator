@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: slackconfig-sample
 data:
-  url: "https://hooks.slack.com/services/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"
+  url: "https://hooks.slack.com/services/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"

@@ -60,11 +60,11 @@ func (n *WebhookNotificationJob) Execute(job interface{}) error {
 
 func (n *SlackNotificationJob) Execute(job interface{}) error {
 	// TODO:
-	url := n.noti.Url
+	slackurl := n.noti.Url
 	msg := n.noti.Message
-	reqbody, _ := json.Marshal(msg)
+	reqbody, _ := json.Marshal(notification.SlackRequestBody{Text: msg})
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqbody))
+	resp, err := http.Post(slackurl, "application/json", bytes.NewBuffer(reqbody))
 
 	if err != nil {
 		return err

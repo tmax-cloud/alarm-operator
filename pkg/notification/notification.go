@@ -30,6 +30,10 @@ type WebhookNotification struct {
 	Message string `json:"message"`
 }
 
+type SlackRequestBody struct {
+	Text string `json:"text"`
+}
+
 type SlackNotification struct {
 	//SenderAccountSecret string `json:"account"`
 	//Workspace           string `json:"workspace"`

@@ -24,7 +24,6 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -112,37 +111,40 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 	var ret notification.Notification
 	var rtype string
 
-	if &o.Spec.Email != nil {
-		smtpcfg := &corev1.ConfigMap{}
-		// XXX: Is SMTPConfig should be in same namespace?
-		err := r.Client.Get(ctx, types.NamespacedName{Name: o.Spec.Email.SMTPConfig, Namespace: o.Namespace}, smtpcfg)
-		if err != nil {
-			if errors.IsNotFound(err) {
+	/*
+		if &o.Spec.Email != nil {
+			smtpcfg := &corev1.ConfigMap{}
+			// XXX: Is SMTPConfig should be in same namespace?
+			err := r.Client.Get(ctx, types.NamespacedName{Name: o.Spec.Email.SMTPConfig, Namespace: o.Namespace}, smtpcfg)
+			if err != nil {
+				if errors.IsNotFound(err) {
+					return "", nil, err
+				}
 				return "", nil, err
 			}
-			return "", nil, err
-		}
 
-		rtype = "email"
-		port, _ := strconv.Atoi(smtpcfg.Data["port"])
-		ret = notification.MailNotification{
-			SMTPConnection: notification.SMTPConnection{
-				Host: smtpcfg.Data["host"],
-				Port: port,
-			},
-			SMTPAccount: notification.SMTPAccount{
-				Username: smtpcfg.Data["username"],
-				Password: smtpcfg.Data["password"],
-			},
-			MailMessage: notification.MailMessage{
-				From:    o.Spec.Email.From,
-				To:      o.Spec.Email.To,
-				Subject: o.Spec.Email.Subject,
-				Body:    o.Spec.Email.Body,
-			},
-		}
+			rtype = "email"
+			port, _ := strconv.Atoi(smtpcfg.Data["port"])
+			ret = notification.MailNotification{
+				SMTPConnection: notification.SMTPConnection{
+					Host: smtpcfg.Data["host"],
+					Port: port,
+				},
+				SMTPAccount: notification.SMTPAccount{
+					Username: smtpcfg.Data["username"],
+					Password: smtpcfg.Data["password"],
+				},
+				MailMessage: notification.MailMessage{
+					From:    o.Spec.Email.From,
+					To:      o.Spec.Email.To,
+					Subject: o.Spec.Email.Subject,
+					Body:    o.Spec.Email.Body,
+				},
+			}
 
-	} else if &o.Spec.Slack != nil {
+		} else
+	*/
+	if &o.Spec.Slack != nil {
 		slackcfg := &corev1.ConfigMap{}
 		err := r.Client.Get(ctx, types.NamespacedName{Name: o.Spec.Slack.SLACKConfig, Namespace: o.Namespace}, slackcfg)
 		if err != nil {
@@ -168,9 +170,11 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 
 func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1alpha1.Notification) error {
 
-	if &o.Spec.Email != nil {
+	/*if &o.Spec.Email != nil {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeMail
-	} else if &o.Spec.Slack != nil {
+	} else
+	*/
+	if &o.Spec.Slack != nil {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeSlack
 	} else if &o.Spec.Webhook != nil {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeWebhook

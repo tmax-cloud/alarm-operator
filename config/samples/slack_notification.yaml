@@ -5,4 +5,4 @@ metadata:
 spec:
   slack:
     slackconfig: slackconfig-sample
-    message: "Test message from operator to slack"
+    message: "Test message to slack"
