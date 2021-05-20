@@ -1,83 +1,78 @@
-
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: "apiextensions.k8s.io/v1beta1"
+kind: "CustomResourceDefinition"
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.3.0
+    controller-gen.kubebuilder.io/version: "v0.3.0"
   creationTimestamp: null
-  name: monitors.alarm.tmax.io
+  name: "monitors.alarm.tmax.io"
 spec:
   additionalPrinterColumns:
-  - JSONPath: .spec.url
-    name: URL
-    type: string
-  - JSONPath: .spec.interval
-    name: Interval
-    type: string
-  group: alarm.tmax.io
+  - JSONPath: ".spec.url"
+    name: "URL"
+    type: "string"
+  - JSONPath: ".spec.interval"
+    name: "Interval"
+    type: "string"
+  group: "alarm.tmax.io"
   names:
-    kind: Monitor
-    listKind: MonitorList
-    plural: monitors
+    kind: "Monitor"
+    listKind: "MonitorList"
+    plural: "monitors"
     shortNames:
-    - mon
-    singular: monitor
-  scope: Namespaced
+    - "mon"
+    singular: "monitor"
+  scope: "Namespaced"
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Monitor is the Schema for the monitors API
+      description: "%alarm.tmax.io_monitors.yaml.spec.validation.openAPIV3Schema"
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
+          description: "%alarm.tmax.io_monitors.yaml.spec.validation.openAPIV3Schema.properties.apiVersion"
+          type: "string"
         kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
+          description: "%alarm.tmax.io_monitors.yaml.spec.validation.openAPIV3Schema.properties.kind"
+          type: "string"
         metadata:
-          type: object
+          type: "object"
         spec:
-          description: MonitorSpec defines the desired state of Monitor
+          description: "%alarm.tmax.io_monitors.yaml.spec.validation.openAPIV3Schema.properties.spec"
           properties:
             body:
-              type: string
+              type: "string"
             interval:
-              type: integer
+              type: "integer"
             url:
-              type: string
+              type: "string"
           required:
-          - body
-          - interval
-          - url
-          type: object
+          - "body"
+          - "interval"
+          - "url"
+          type: "object"
         status:
-          description: MonitorStatus defines the observed state of Monitor
+          description: "%alarm.tmax.io_monitors.yaml.spec.validation.openAPIV3Schema.properties.status"
           properties:
             history:
               items:
                 properties:
                   status:
-                    type: string
+                    type: "string"
                   updatedAt:
-                    type: string
+                    type: "string"
                   value:
-                    type: string
+                    type: "string"
                 required:
-                - status
-                - updatedAt
-                type: object
-              type: array
-          type: object
-      type: object
-  version: v1alpha1
+                - "status"
+                - "updatedAt"
+                type: "object"
+              type: "array"
+          type: "object"
+      type: "object"
+  version: "v1alpha1"
   versions:
-  - name: v1alpha1
+  - name: "v1alpha1"
     served: true
     storage: true
 status:
