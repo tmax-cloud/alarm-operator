@@ -20,14 +20,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/Jeffail/gabs/v2"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/Jeffail/gabs/v2"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"

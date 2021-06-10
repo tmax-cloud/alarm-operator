@@ -77,13 +77,14 @@ func (r *NotificationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		}
 		return ctrl.Result{}, err
 	}
+
 	notiType, noti, err := r.getNotificationFromResource(ctx, o)
 	if err != nil {
 		logger.Error(err, "Failed to generate notification object from resource")
 		return ctrl.Result{RequeueAfter: requeueDuration}, err
 	}
 
-	resp, err := notifier.Register(o.Name, o.Namespace, notiType, noti)
+	resp, err := notifier.Register(o.Name, notiType, noti)
 	if err != nil {
 		logger.Error(err, "Failed to register notification")
 		return ctrl.Result{RequeueAfter: requeueDuration}, err
@@ -140,17 +141,24 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 				Body:    o.Spec.Email.Body,
 			},
 		}
-	} else if o.Spec.Webhook.Url != "" {
-		// TODO:
-	} else if o.Spec.Slack.Channel != "" {
+
+	} else if o.Spec.Slack.SLACKConfig != "" {
+		slackcfg := &corev1.ConfigMap{}
+		err := r.Client.Get(ctx, types.NamespacedName{Name: o.Spec.Slack.SLACKConfig, Namespace: o.Namespace}, slackcfg)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				return "", nil, err
+			}
+			return "", nil, err
+		}
 		rtype = "slack"
 		ret = notification.SlackNotification{
-			Authorization:  o.Spec.Slack.Authorization,
-			SlackMessage: notification.SlackMessage{
-				Channel:  o.Spec.Slack.Channel,
-				Text:     o.Spec.Slack.Text,
-			},
+			Url:     slackcfg.Data["url"],
+			Message: o.Spec.Slack.Message,
 		}
+
+	} else if o.Spec.Webhook.Url != "" {
+		// TODO:
 	} else {
 		// TODO:
 	}
@@ -159,21 +167,22 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 }
 
 func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1alpha1.Notification) error {
+
 	if o.Spec.Email.SMTPConfig != "" {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeMail
-	} else if o.Spec.Webhook.Url != "" {
-		o.Status.Type = tmaxiov1alpha1.NotificationTypeWebhook
-	} else if o.Spec.Slack.Channel != "" {
+	} else if o.Spec.Slack.SLACKConfig != "" {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeSlack
 	} else if o.Spec.Webhook.Url != "" {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeWebhook
 	} else {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeUnknown
 	}
+
 	u, err := url.Parse(os.Getenv("NOTIFIER_URL"))
 	if err != nil {
 		return err
 	}
+
 	epHost := u.Hostname()
 	if !IsIpv4Regex(u.Hostname()) {
 		ips, _ := net.LookupIP(u.Hostname())
@@ -181,7 +190,7 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 			epHost = ip.String()
 		}
 	}
-	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.%s.nip.io:%s", o.Name, o.Namespace, epHost, u.Port())
+	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.xip.io:%s", o.Name, epHost, u.Port())
 	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type)
 
 	return r.Status().Update(ctx, o)

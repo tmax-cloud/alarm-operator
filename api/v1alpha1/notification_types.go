@@ -47,9 +47,11 @@ type WebhookNotification struct {
 }
 
 type SlackNotification struct {
-	Authorization       string `json:"authorization"`
-	Channel             string `json:"channel"`
-	Text                string `json:"text"`
+	//SenderAccountSecret string `json:"account"`
+	//Workspace           string `json:"workspace"`
+	//Channel             string `json:"channel"`
+	SLACKConfig string `json:"slackconfig"`
+	Message     string `json:"message"`
 }
 
 // NotificationSpec defines the desired state of Notification
