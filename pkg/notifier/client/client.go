@@ -20,12 +20,12 @@ func New(u string) *Notifier {
 }
 
 // Register regist notification
-func (c *Notifier) Register(id, notiType string, noti notification.Notification) (*http.Response, error) {
+func (c *Notifier) Register(id, namespace, notiType string, noti notification.Notification) (*http.Response, error) {
 	var payload []byte
 	var err error
 	if payload, err = json.Marshal(noti); err != nil {
 		return nil, err
 	}
-	endpoint := fmt.Sprintf("%s/internal/notification/%s?type=%s", c.URL, id, notiType)
+	endpoint := fmt.Sprintf("%s/internal/notification/%s/%s?type=%s", c.URL, namespace, id, notiType)
 	return http.Post(endpoint, "application/json", bytes.NewBuffer(payload))
 }

@@ -34,6 +34,7 @@ func (h *registryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.logger.Infow("handler", "URL", r.URL, "Host", r.Host, "Hostname", r.URL.Hostname())
 
 	id := mux.Vars(r)["id"]
+	ns := mux.Vars(r)["namespace"]
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read body", http.StatusInternalServerError)
@@ -68,7 +69,7 @@ func (h *registryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apikey, _, err := h.registry.Fetch(id)
+	apikey, _, err := h.registry.Fetch(id, ns)
 	if err != nil {
 		h.logger.Error(err)
 	} else if apikey == "" {
@@ -82,7 +83,7 @@ func (h *registryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.logger.Infow("new notification", "id", id, "apikey", apikey)
-	err = h.registry.Register(id, apikey, noti)
+	err = h.registry.Register(id, ns, apikey, noti)
 	if err != nil {
 		msg := fmt.Sprintf("Failed to fetch registry(id: %s): %s", id, err.Error())
 		h.logger.Error(msg)

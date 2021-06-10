@@ -15,7 +15,7 @@ func NewNotificationRegistry(dataSource Registry) *NotificationRegistry {
 	return &NotificationRegistry{ds: dataSource}
 }
 
-func (r *NotificationRegistry) Register(id string, key string, noti Notification) error {
+func (r *NotificationRegistry) Register(id string, namespace string, key string, noti Notification) error {
 
 	payload, err := json.Marshal(noti)
 	if err != nil {
@@ -32,16 +32,16 @@ func (r *NotificationRegistry) Register(id string, key string, noti Notification
 	default:
 		return fmt.Errorf(fmt.Sprintf("unsupported notification type: %s\n", reflect.TypeOf(noti)))
 	}
-
-	return r.ds.Save(id, payload)
+	
+	return r.ds.Save(id, namespace, payload)
 }
 
-func (r *NotificationRegistry) Fetch(id string) (string, Notification, error) {
-	data, err := r.ds.Load(id)
+func (r *NotificationRegistry) Fetch(id string, namespace string) (string, Notification, error) {
+	data, err := r.ds.Load(id, namespace)
 	if err != nil {
 		return "", nil, err
 	}
-
+	
 	// FIXME: too bad extraction
 	tokens := strings.Split(string(data), ":")
 	notiType := tokens[0]
