@@ -2,9 +2,9 @@ apiVersion: alarm.tmax.io/v1alpha1
 kind: Notification
 metadata:
   name: slack-notification-sample
+  namespace: default
 spec:
   slack:
-    account: my-slack-account
-    workspace: hypercloud
-    channel: announcements
-    message: "Test message from alarm-operator"
+    authorization: "Bearer xoxp-2127332287603-2124041603093-2151004591520-d9c9bd557fbf455254c128ffa0fef472"
+    channel: "테스트"
+    text: "Test message from alarm-operator11"
