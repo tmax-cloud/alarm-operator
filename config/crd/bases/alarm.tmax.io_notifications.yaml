@@ -68,15 +68,16 @@ spec:
               type: object
             slack:
               properties:
-                message:
+                authorization:
                   type: string
-                slackconfig:
-                  description: SenderAccountSecret string `json:"account"` Workspace           string
-                    `json:"workspace"` Channel             string `json:"channel"`
+                channel:
+                  type: string
+                text:
                   type: string
               required:
-              - message
-              - slackconfig
+              - authorization
+              - channel
+              - text
               type: object
             webhook:
               properties:

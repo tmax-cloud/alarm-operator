@@ -35,9 +35,11 @@ type SlackRequestBody struct {
 }
 
 type SlackNotification struct {
-	//SenderAccountSecret string `json:"account"`
-	//Workspace           string `json:"workspace"`
-	//Channel             string `json:"channel"`
-	Url     string `json:"url"`
-	Message string `json:"message"`
+	Authorization       string `json:"authorization"`
+	SlackMessage
+}
+
+type SlackMessage struct {
+	Channel             string `json:"channel"`
+	Text                string `json:"text"`
 }
