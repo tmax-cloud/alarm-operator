@@ -140,7 +140,6 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 				Body:    o.Spec.Email.Body,
 			},
 		}
-
 	} else if o.Spec.Webhook.Url != "" {
 		// TODO:
 	} else if o.Spec.Slack.Channel != "" {
@@ -166,6 +165,8 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeWebhook
 	} else if o.Spec.Slack.Channel != "" {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeSlack
+	} else if o.Spec.Webhook.Url != "" {
+		o.Status.Type = tmaxiov1alpha1.NotificationTypeWebhook
 	} else {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeUnknown
 	}

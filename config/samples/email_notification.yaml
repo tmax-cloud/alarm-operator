@@ -6,6 +6,6 @@ spec:
   email:
     smtpcfg: smtpconfig-sample
     from: no_reply@tmax.co.kr
-    to: all@tmax.co.kr
+    to: lsunyeong@gmail.com
     subject: "[INFO] Notification from alarm-operator"
     body: "Test message"
