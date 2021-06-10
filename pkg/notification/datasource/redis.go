@@ -30,12 +30,12 @@ func NewRedisDataSource(addr string, password string, db int) (*RedisDataSource,
 	}, nil
 }
 
-func (s *RedisDataSource) Save(id string, namespace string, data []byte) error {
-	return s.client.HSet(RegistryKey, id + namespace, data).Err()
+func (s *RedisDataSource) Save(id string, data []byte) error {
+	return s.client.HSet(RegistryKey, id, data).Err()
 }
 
-func (s *RedisDataSource) Load(id string, namespace string) ([]byte, error) {
-	r := s.client.HGet(RegistryKey, id + namespace)
+func (s *RedisDataSource) Load(id string) ([]byte, error) {
+	r := s.client.HGet(RegistryKey, id)
 	if r.Err() != nil {
 		return nil, r.Err()
 	}

@@ -5,6 +5,6 @@ metadata:
   namespace: default
 spec:
   slack:
-    authorization: "Bearer xoxp-2127332287603-2124041603093-2151004591520-d9c9bd557fbf455254c128ffa0fef472"
+    authorization: "Bearer My_Slack_Token"
     channel: "테스트"
     text: "Test message from alarm-operator11"

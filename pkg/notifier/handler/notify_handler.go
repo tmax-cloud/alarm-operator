@@ -33,7 +33,8 @@ func (h *notificationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	id := extractIdFromHost(strings.Split(r.Host, ":")[0])
 	namespace := extractNsFromHost(strings.Split(r.Host, ":")[0])
-	key, noti, err := h.registry.Fetch(id, namespace)
+	id = id + "/" + namespace
+	key, noti, err := h.registry.Fetch(id)
 	if err != nil {
 		msg := fmt.Sprintf("Failed to fetch registry(id: %s): %s", id, err.Error())
 		h.logger.Error(msg)
@@ -55,7 +56,7 @@ func (h *notificationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(fmt.Sprintf("Notification: %s reserved.", id)))
+	_, _ = w.Write([]byte(fmt.Sprintf("Notification: %s reserved.\n", id)))
 }
 
 // extractIdFromHost extract XXXX from XXXX.127.0.0.1.nip.io

@@ -16,24 +16,24 @@ spec:
         app: notifier
     spec:
       containers:
-      - name: notifier
-        image: notifier:latest
-        imagePullPolicy: Always
-        env:
-        - name: REDIS_URL
-          value: redis://$(REDIS_SVC_NAME):6379/1
-        ports:
-        - name: http
-          containerPort: 8080
-        - name: https
-          containerPort: 8081
-        resources:
-          limits:
-            cpu: 100m
-            memory: 30Mi
-          requests:
-            cpu: 100m
-            memory: 20Mi
+        - name: notifier
+          image: notifier:latest
+          imagePullPolicy: Always
+          env:
+            - name: REDIS_URL
+              value: redis://$(REDIS_SVC_NAME):6379/1
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8081
+          resources:
+            limits:
+              cpu: 100m
+              memory: 30Mi
+            requests:
+              cpu: 100m
+              memory: 20Mi
       terminationGracePeriodSeconds: 600
 ---
 apiVersion: v1
@@ -47,8 +47,8 @@ spec:
   selector:
     app: notifier
   ports:
-  - name: http
-    port: 8080
-  - name: https
-    port: 8081
-  type: ClusterIP
+    - name: http
+      port: 8080
+    - name: https
+      port: 8081
+  type: NodePort
