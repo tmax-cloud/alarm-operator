@@ -58,7 +58,7 @@ func main() {
 	}()
 
 	router := mux.NewRouter()
-	router.Handle("/internal/notification/{namespace}/{id}", handler.NewRegistryHandler(ctx, r, logger)).Methods("POST")
+	router.Handle("/internal/notification/{id}", handler.NewRegistryHandler(ctx, r, logger)).Methods("POST")
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("I'm fine"))

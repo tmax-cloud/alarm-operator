@@ -32,8 +32,7 @@ func (h *notificationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	h.logger.Infow("handler", "URL", r.URL, "Auth", authkey)
 
 	id := extractIdFromHost(strings.Split(r.Host, ":")[0])
-	namespace := extractNsFromHost(strings.Split(r.Host, ":")[0])
-	id = id + "/" + namespace
+
 	key, noti, err := h.registry.Fetch(id)
 	if err != nil {
 		msg := fmt.Sprintf("Failed to fetch registry(id: %s): %s", id, err.Error())
@@ -61,9 +60,8 @@ func (h *notificationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 // extractIdFromHost extract XXXX from XXXX.127.0.0.1.nip.io
 func extractIdFromHost(hostIn string) string {
-	return strings.Split(hostIn, ".")[0]
-}
-
-func extractNsFromHost(hostIn string) string {
-	return strings.Split(hostIn, ".")[1]
+	name := strings.Split(hostIn, ".")[0]
+	namespace := strings.Split(hostIn, ".")[1]
+	id := name + "-" + namespace
+	return id
 }

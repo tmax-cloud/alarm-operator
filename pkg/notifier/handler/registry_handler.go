@@ -33,8 +33,7 @@ func (h *registryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Infow("handler", "URL", r.URL, "Host", r.Host, "Hostname", r.URL.Hostname())
 
-	id := mux.Vars(r)["id"] + "/" + mux.Vars(r)["namespace"]
-
+	id := mux.Vars(r)["id"]
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read body", http.StatusInternalServerError)

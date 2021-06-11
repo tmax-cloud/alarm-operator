@@ -83,7 +83,9 @@ func (r *NotificationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		return ctrl.Result{RequeueAfter: requeueDuration}, err
 	}
 
-	resp, err := notifier.Register(o.Name, o.Namespace, notiType, noti)
+	id := extractId(o.Name, o.Namespace)
+
+	resp, err := notifier.Register(id, notiType, noti)
 	if err != nil {
 		logger.Error(err, "Failed to register notification")
 		return ctrl.Result{RequeueAfter: requeueDuration}, err
@@ -197,4 +199,9 @@ var ipRegex, _ = regexp.Compile(`^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-
 func IsIpv4Regex(ipAddress string) bool {
 	ipAddress = strings.Trim(ipAddress, " ")
 	return ipRegex.MatchString(ipAddress)
+}
+
+func extractId(name string, namespace string) string {
+	id := name + "-" + namespace
+	return id
 }
