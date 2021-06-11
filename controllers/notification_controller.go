@@ -77,14 +77,15 @@ func (r *NotificationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		}
 		return ctrl.Result{}, err
 	}
-
 	notiType, noti, err := r.getNotificationFromResource(ctx, o)
 	if err != nil {
 		logger.Error(err, "Failed to generate notification object from resource")
 		return ctrl.Result{RequeueAfter: requeueDuration}, err
 	}
 
-	resp, err := notifier.Register(o.Name, notiType, noti)
+	id := extractId(o.Name, o.Namespace)
+
+	resp, err := notifier.Register(id, notiType, noti)
 	if err != nil {
 		logger.Error(err, "Failed to register notification")
 		return ctrl.Result{RequeueAfter: requeueDuration}, err
@@ -112,7 +113,7 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 	var ret notification.Notification
 	var rtype string
 
-	if &o.Spec.Email != nil {
+	if o.Spec.Email.SMTPConfig != "" {
 		smtpcfg := &corev1.ConfigMap{}
 		// XXX: Is SMTPConfig should be in same namespace?
 		err := r.Client.Get(ctx, types.NamespacedName{Name: o.Spec.Email.SMTPConfig, Namespace: o.Namespace}, smtpcfg)
@@ -142,10 +143,17 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 			},
 		}
 
-	} else if &o.Spec.Webhook != nil {
+	} else if o.Spec.Webhook.Url != "" {
 		// TODO:
-	} else if &o.Spec.Slack != nil {
-		// TODO:
+	} else if o.Spec.Slack.Channel != "" {
+		rtype = "slack"
+		ret = notification.SlackNotification{
+			Authorization:  o.Spec.Slack.Authorization,
+			SlackMessage: notification.SlackMessage{
+				Channel:  o.Spec.Slack.Channel,
+				Text:     o.Spec.Slack.Text,
+			},
+		}
 	} else {
 		// TODO:
 	}
@@ -154,21 +162,19 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 }
 
 func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1alpha1.Notification) error {
-	if &o.Spec.Email != nil {
+	if o.Spec.Email.SMTPConfig != "" {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeMail
-	} else if &o.Spec.Webhook != nil {
+	} else if o.Spec.Webhook.Url != "" {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeWebhook
-	} else if &o.Spec.Slack != nil {
+	} else if o.Spec.Slack.Channel != "" {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeSlack
 	} else {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeUnknown
 	}
-
 	u, err := url.Parse(os.Getenv("NOTIFIER_URL"))
 	if err != nil {
 		return err
 	}
-
 	epHost := u.Hostname()
 	if !IsIpv4Regex(u.Hostname()) {
 		ips, _ := net.LookupIP(u.Hostname())
@@ -176,7 +182,7 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 			epHost = ip.String()
 		}
 	}
-	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.xip.io:%s", o.Name, epHost, u.Port())
+	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.%s.nip.io:%s", o.Name, o.Namespace, epHost, u.Port())
 	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type)
 
 	return r.Status().Update(ctx, o)
@@ -193,4 +199,9 @@ var ipRegex, _ = regexp.Compile(`^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-
 func IsIpv4Regex(ipAddress string) bool {
 	ipAddress = strings.Trim(ipAddress, " ")
 	return ipRegex.MatchString(ipAddress)
+}
+
+func extractId(name string, namespace string) string {
+	id := name + "-" + namespace
+	return id
 }

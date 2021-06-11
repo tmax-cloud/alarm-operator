@@ -32,7 +32,7 @@ func (r *NotificationRegistry) Register(id string, key string, noti Notification
 	default:
 		return fmt.Errorf(fmt.Sprintf("unsupported notification type: %s\n", reflect.TypeOf(noti)))
 	}
-
+	
 	return r.ds.Save(id, payload)
 }
 
@@ -41,7 +41,7 @@ func (r *NotificationRegistry) Fetch(id string) (string, Notification, error) {
 	if err != nil {
 		return "", nil, err
 	}
-
+	
 	// FIXME: too bad extraction
 	tokens := strings.Split(string(data), ":")
 	notiType := tokens[0]

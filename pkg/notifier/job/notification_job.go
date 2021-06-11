@@ -1,7 +1,12 @@
 package job
 
 import (
+	"bytes"
 	"crypto/tls"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/tmax-cloud/alarm-operator/pkg/notification"
 	"github.com/tmax-cloud/alarm-operator/pkg/notifier/background"
@@ -55,6 +60,38 @@ func (n *WebhookNotificationJob) Execute(job interface{}) error {
 }
 
 func (n *SlackNotificationJob) Execute(job interface{}) error {
-	// TODO:
+	slackMessage := n.noti.SlackMessage
+	pbytes, _ := json.Marshal(slackMessage)
+	buff := bytes.NewBuffer(pbytes)
+
+	req, err := http.NewRequest("POST", "https://slack.com/api/chat.postMessage", buff)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(n.noti.Authorization)
+
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", n.noti.Authorization)
+
+	tr := &http.Transport{
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
+	client := &http.Client{Transport: tr}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err == nil {
+		str := string(respBody)
+		fmt.Println(str)
+	}
+
 	return nil
 }

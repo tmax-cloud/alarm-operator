@@ -68,19 +68,16 @@ spec:
               type: object
             slack:
               properties:
-                account:
+                authorization:
                   type: string
                 channel:
                   type: string
-                message:
-                  type: string
-                workspace:
+                text:
                   type: string
               required:
-              - account
+              - authorization
               - channel
-              - message
-              - workspace
+              - text
               type: object
             webhook:
               properties:
