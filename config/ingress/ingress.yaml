@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: nginx-shd
+  name: alarm-ingress
+  namespace: alarm-operator-system
+spec:
+  rules:
+    - host: notification.172.22.11.14.nip.io
+      http:
+        paths:
+          - pathType: Prefix
+            path: /(.*)
+            backend:
+              service:
+                name: alarm-operator-notifier
+                port:
+                  number: 8080
+status:
+  loadBalancer:
+    ingress:
+      - ip: 172.22.11.14

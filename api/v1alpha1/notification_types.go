@@ -72,6 +72,7 @@ type NotificationStatus struct {
 	Type     NotificationType `json:"type,omitempty"`
 	EndPoint string           `json:"endpoint,omitempty"`
 	ApiKey   string           `json:"apikey,omitempty"`
+	Id       string           `json:"id,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -79,7 +80,7 @@ type NotificationStatus struct {
 // +kubebuilder:resource:shortName=not
 // +kubebuilder:printcolumn:name="Action",type=string,JSONPath=`.status.type`
 // +kubebuilder:printcolumn:name="Endpoint",type=string,JSONPath=`.status.endpoint`
-
+// +kubebuilder:printcolumn:name="ID",type=string,JSONPath=`.status.id`
 // Notification is the Schema for the notifications API
 type Notification struct {
 	metav1.TypeMeta   `json:",inline"`

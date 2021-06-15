@@ -20,8 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net"
-	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -171,19 +169,20 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 	} else {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeUnknown
 	}
-	u, err := url.Parse(os.Getenv("NOTIFIER_URL"))
-	if err != nil {
-		return err
-	}
-	epHost := u.Hostname()
-	if !IsIpv4Regex(u.Hostname()) {
-		ips, _ := net.LookupIP(u.Hostname())
-		for _, ip := range ips {
-			epHost = ip.String()
-		}
-	}
-	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.%s.nip.io:%s", o.Name, o.Namespace, epHost, u.Port())
-	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type)
+	// u, err := url.Parse(os.Getenv("NOTIFIER_URL"))
+	// if err != nil {
+	// 	return err
+	// }
+	// epHost := u.Hostname()
+	// if !IsIpv4Regex(u.Hostname()) {
+	// 	ips, _ := net.LookupIP(u.Hostname())
+	// 	for _, ip := range ips {
+	// 		epHost = ip.String()
+	// 	}
+	// }
+	o.Status.EndPoint = "http://notification.172.22.11.14.nip.io"
+	o.Status.Id = fmt.Sprintf("%s-%s", o.Name, o.Namespace)
+	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type, "Id", o.Status.Id)
 
 	return r.Status().Update(ctx, o)
 }
