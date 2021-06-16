@@ -30,6 +30,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	networkingv1beta1 "k8s.io/api/networking/v1beta1"
+
 	tmaxiov1alpha1 "github.com/tmax-cloud/alarm-operator/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
@@ -69,6 +71,9 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = tmaxiov1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = networkingv1beta1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme

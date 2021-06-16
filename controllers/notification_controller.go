@@ -169,6 +169,7 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 	} else {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeUnknown
 	}
+	loadIP := os.Getenv("LOADBALANCER_IP")
 	// u, err := url.Parse(os.Getenv("NOTIFIER_URL"))
 	// if err != nil {
 	// 	return err
@@ -180,7 +181,7 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 	// 		epHost = ip.String()
 	// 	}
 	// }
-	o.Status.EndPoint = "http://notification.172.22.11.14.nip.io"
+	o.Status.EndPoint = fmt.Sprintf("http://alarm-ingress.%s.nip.io", loadIP)
 	o.Status.Id = fmt.Sprintf("%s-%s", o.Name, o.Namespace)
 	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type, "Id", o.Status.Id)
 
