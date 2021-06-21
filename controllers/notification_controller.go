@@ -55,6 +55,7 @@ type NotificationReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=alarm.tmax.io,resources=notifications,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=alarm.tmax.io,resources=notifications/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=alarm.tmax.io,resources=smtpconfigs,verbs=get;list;watch;
@@ -169,7 +170,6 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 	} else {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeUnknown
 	}
-	loadIP := os.Getenv("LOADBALANCER_IP")
 	// u, err := url.Parse(os.Getenv("NOTIFIER_URL"))
 	// if err != nil {
 	// 	return err
@@ -181,7 +181,8 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 	// 		epHost = ip.String()
 	// 	}
 	// }
-	o.Status.EndPoint = fmt.Sprintf("http://alarm-ingress.%s.nip.io", loadIP)
+	ip := os.Getenv("LOADBALANCER")
+	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.nip.io", o.Status.Id, ip)
 	o.Status.Id = fmt.Sprintf("%s-%s", o.Name, o.Namespace)
 	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type, "Id", o.Status.Id)
 

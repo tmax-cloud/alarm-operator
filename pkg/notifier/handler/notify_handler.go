@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/tmax-cloud/alarm-operator/pkg/notification"
 	"go.uber.org/zap"
@@ -30,8 +31,7 @@ func (h *notificationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	authkey := r.Header.Get("AuthKey")
 	h.logger.Infow("handler", "URL", r.URL, "Auth", authkey)
 
-	id := r.Header.Get("Id")
-	// id := extractIdFromHost(strings.Split(targetAddr, ":")[0])
+	id := extractIdFromHost(r.Host)
 
 	key, noti, err := h.registry.Fetch(id)
 	if err != nil {
@@ -59,9 +59,7 @@ func (h *notificationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 }
 
 // extractIdFromHost extract XXXX from XXXX.127.0.0.1.nip.io
-// func extractIdFromHost(hostIn string) string {
-// 	name := strings.Split(hostIn, ".")[0]
-// 	namespace := strings.Split(hostIn, ".")[1]
-// 	id := name + "-" + namespace
-// 	return id
-// }
+func extractIdFromHost(hostIn string) string {
+	id := strings.Split(hostIn, ".")[0]
+	return id
+}

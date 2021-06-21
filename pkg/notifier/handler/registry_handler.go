@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/tmax-cloud/alarm-operator/pkg/notification"
+	"github.com/tmax-cloud/alarm-operator/pkg/notification/ingress"
 	"go.uber.org/zap"
 )
 
@@ -89,6 +90,8 @@ func (h *registryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, http.StatusNotFound)
 		return
 	}
+
+	go ingress.GetIngress(id)
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(apikey))
