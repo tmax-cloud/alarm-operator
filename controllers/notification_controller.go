@@ -182,9 +182,9 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 	// 	}
 	// }
 	ip := os.Getenv("LOADBALANCER")
-	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.nip.io", o.Status.Id, ip)
-	o.Status.Id = fmt.Sprintf("%s-%s", o.Name, o.Namespace)
-	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type, "Id", o.Status.Id)
+	id := o.Name + "-" + o.Namespace
+	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.nip.io", id, ip)
+	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type)
 
 	return r.Status().Update(ctx, o)
 }

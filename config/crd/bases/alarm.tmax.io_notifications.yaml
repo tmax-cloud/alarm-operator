@@ -15,9 +15,6 @@ spec:
   - JSONPath: .status.endpoint
     name: Endpoint
     type: string
-  - JSONPath: .status.id
-    name: ID
-    type: string
   group: alarm.tmax.io
   names:
     kind: Notification
@@ -99,8 +96,6 @@ spec:
             apikey:
               type: string
             endpoint:
-              type: string
-            id:
               type: string
             type:
               description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
