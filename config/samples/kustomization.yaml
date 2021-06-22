@@ -1,8 +1,8 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- email_notification.yaml
-- slack_notification.yaml
-- notificationtrigger.yaml
-- smtpconfig.yaml
-- monitor.yaml
+  - email_notification.yaml
+  - slack_notification.yaml
+  - notificationtrigger.yaml
+  - smtpconfig.yaml
+  - monitor.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

@@ -79,7 +79,6 @@ type NotificationStatus struct {
 // +kubebuilder:resource:shortName=not
 // +kubebuilder:printcolumn:name="Action",type=string,JSONPath=`.status.type`
 // +kubebuilder:printcolumn:name="Endpoint",type=string,JSONPath=`.status.endpoint`
-
 // Notification is the Schema for the notifications API
 type Notification struct {
 	metav1.TypeMeta   `json:",inline"`
