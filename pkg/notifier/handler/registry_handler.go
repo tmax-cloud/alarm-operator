@@ -91,7 +91,19 @@ func (h *registryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go ingress.GetIngress(id)
+	ingCli, err := ingress.NewAlarmIngressClient(id)
+	if err != nil {
+		h.logger.Error(err, "Failed to get ingress client")
+		return
+	}
+
+	c := make(chan error)
+	go ingCli.AddIngress(c)
+	err = <-c
+	if err != nil {
+		h.logger.Error(err, "Failed to add ingress")
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(apikey))

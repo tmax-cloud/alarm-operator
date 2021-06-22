@@ -36,6 +36,7 @@ import (
 
 	tmaxiov1alpha1 "github.com/tmax-cloud/alarm-operator/api/v1alpha1"
 	"github.com/tmax-cloud/alarm-operator/pkg/notification"
+	"github.com/tmax-cloud/alarm-operator/pkg/notification/ingress"
 	notifiercli "github.com/tmax-cloud/alarm-operator/pkg/notifier/client"
 )
 
@@ -181,8 +182,15 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 	// 		epHost = ip.String()
 	// 	}
 	// }
-	ip := os.Getenv("LOADBALANCER")
 	id := o.Name + "-" + o.Namespace
+	ingCli, err := ingress.NewAlarmIngressClient(id)
+	if err != nil {
+		return err
+	}
+	ip, err := ingCli.GetIp()
+	if err != nil {
+		return err
+	}
 	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.nip.io", id, ip)
 	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type)
 
