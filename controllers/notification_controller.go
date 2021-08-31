@@ -20,8 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net"
-	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -38,6 +36,7 @@ import (
 
 	tmaxiov1alpha1 "github.com/tmax-cloud/alarm-operator/api/v1alpha1"
 	"github.com/tmax-cloud/alarm-operator/pkg/notification"
+	"github.com/tmax-cloud/alarm-operator/pkg/notification/ingress"
 	notifiercli "github.com/tmax-cloud/alarm-operator/pkg/notifier/client"
 )
 
@@ -57,6 +56,7 @@ type NotificationReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=alarm.tmax.io,resources=notifications,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=alarm.tmax.io,resources=notifications/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=alarm.tmax.io,resources=smtpconfigs,verbs=get;list;watch;
@@ -171,18 +171,27 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 	} else {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeUnknown
 	}
-	u, err := url.Parse(os.Getenv("NOTIFIER_URL"))
+	// u, err := url.Parse(os.Getenv("NOTIFIER_URL"))
+	// if err != nil {
+	// 	return err
+	// }
+	// epHost := u.Hostname()
+	// if !IsIpv4Regex(u.Hostname()) {
+	// 	ips, _ := net.LookupIP(u.Hostname())
+	// 	for _, ip := range ips {
+	// 		epHost = ip.String()
+	// 	}
+	// }
+	id := o.Name + "-" + o.Namespace
+	ingCli, err := ingress.NewAlarmIngressClient(id)
 	if err != nil {
 		return err
 	}
-	epHost := u.Hostname()
-	if !IsIpv4Regex(u.Hostname()) {
-		ips, _ := net.LookupIP(u.Hostname())
-		for _, ip := range ips {
-			epHost = ip.String()
-		}
+	ip, err := ingCli.GetIp()
+	if err != nil {
+		return err
 	}
-	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.%s.nip.io:%s", o.Name, o.Namespace, epHost, u.Port())
+	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.nip.io", id, ip)
 	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type)
 
 	return r.Status().Update(ctx, o)

@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: nginx-shd
+  name: ingress
+  namespace: alarm-operator-system
+  labels:
+    alarm.tmax.io/part-of: controller
+spec:
+  rules:
+    - host: waiting.for.loadbalancer
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: alarm-operator-notifier
+                port:
+                  number: 8080

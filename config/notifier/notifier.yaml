@@ -51,4 +51,4 @@ spec:
       port: 8080
     - name: https
       port: 8081
-  type: NodePort
+  type: ClusterIP

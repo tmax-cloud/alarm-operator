@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/tmax-cloud/alarm-operator/pkg/notification"
+	"github.com/tmax-cloud/alarm-operator/pkg/notification/ingress"
 	"go.uber.org/zap"
 )
 
@@ -87,6 +88,20 @@ func (h *registryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		msg := fmt.Sprintf("Failed to fetch registry(id: %s): %s", id, err.Error())
 		h.logger.Error(msg)
 		http.Error(w, msg, http.StatusNotFound)
+		return
+	}
+
+	ingCli, err := ingress.NewAlarmIngressClient(id)
+	if err != nil {
+		h.logger.Error(err, "Failed to get ingress client")
+		return
+	}
+
+	c := make(chan error)
+	go ingCli.AddIngress(c)
+	err = <-c
+	if err != nil {
+		h.logger.Error(err, "Failed to add ingress")
 		return
 	}
 
