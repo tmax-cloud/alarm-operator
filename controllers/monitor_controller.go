@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
@@ -135,11 +136,17 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			result := tmaxiov1alpha1.NotificationTriggerResult{}
 			if eval(v, nt.Spec.Operand, nt.Spec.Op) {
 				n := &tmaxiov1alpha1.Notification{}
+				secret := &corev1.Secret{}
 				if err := r.Get(ctx, types.NamespacedName{Namespace: nt.Namespace, Name: nt.Spec.Notification}, n); err != nil {
 					result.Message = "failed to get notification from resource"
 					logger.Error(err, result.Message)
 				}
-				if err = sendNotification(*n); err != nil {
+				if err = r.Get(ctx, types.NamespacedName{Name: nt.Spec.Notification + "-key-secret", Namespace: nt.Namespace}, secret); err != nil {
+					result.Message = "failed to get notification's apiKey"
+					logger.Error(err, result.Message)
+				}
+
+				if err = sendNotification(*n, *secret); err != nil {
 					result.Message = "failed to send notification"
 					logger.Error(err, result.Message)
 				}
@@ -147,7 +154,7 @@ func (r *MonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				result.UpdatedAt = time.Now().Format(time.RFC3339)
 			} else {
 				result.Triggered = false
-				result.Message = fmt.Sprintf("condition not matched")
+				result.Message = "condition not matched"
 			}
 
 			nt.Status.History = append(nt.Status.History, result)
@@ -287,7 +294,7 @@ func eval(op1 interface{}, op2 string, op string) bool {
 	return false
 }
 
-func sendNotification(o tmaxiov1alpha1.Notification) error {
+func sendNotification(o tmaxiov1alpha1.Notification, secret corev1.Secret) error {
 	if o.Status.EndPoint == "" {
 		return fmt.Errorf("notification's endpoint not prepared")
 	}
@@ -297,7 +304,7 @@ func sendNotification(o tmaxiov1alpha1.Notification) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", o.Status.ApiKey)
+	req.Header.Set("ApiKey", string(secret.Data["APIKey"]))
 
 	if _, err = http.DefaultClient.Do(req); err != nil {
 		return err

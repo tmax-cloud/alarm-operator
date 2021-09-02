@@ -55,6 +55,8 @@ spec:
                   type: string
                 smtpcfg:
                   type: string
+                smtpsecret:
+                  type: string
                 subject:
                   type: string
                 to:
@@ -63,6 +65,7 @@ spec:
               - body
               - from
               - smtpcfg
+              - smtpsecret
               - subject
               - to
               type: object
@@ -93,8 +96,6 @@ spec:
         status:
           description: NotificationStatus defines the observed state of Notification
           properties:
-            apikey:
-              type: string
             endpoint:
               type: string
             type:

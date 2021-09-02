@@ -75,8 +75,8 @@ func (n *SlackNotificationJob) Execute(job interface{}) error {
 	req.Header.Add("Authorization", n.noti.Authorization)
 
 	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-    }
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 	client := &http.Client{Transport: tr}
 	resp, err := client.Do(req)
 

@@ -31,11 +31,11 @@ type WebhookNotification struct {
 }
 
 type SlackNotification struct {
-	Authorization       string `json:"authorization"`
+	Authorization string `json:"authorization"`
 	SlackMessage
 }
 
 type SlackMessage struct {
-	Channel             string `json:"channel"`
-	Text                string `json:"text"`
+	Channel string `json:"channel"`
+	Text    string `json:"text"`
 }

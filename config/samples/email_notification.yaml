@@ -5,6 +5,7 @@ metadata:
 spec:
   email:
     smtpcfg: smtpconfig-sample
+    smtpsecret: tmaxcloud-announcer-credit
     from: no_reply@tmax.co.kr
     to: all@tmax.co.kr
     subject: "[INFO] Notification from alarm-operator"

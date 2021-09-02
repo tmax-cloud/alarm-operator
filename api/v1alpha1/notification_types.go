@@ -34,6 +34,7 @@ const (
 
 type EmailNotification struct {
 	SMTPConfig string `json:"smtpcfg"`
+	SMTPSecret string `json:"smtpsecret"`
 	From       string `json:"from"`
 	To         string `json:"to"`
 	Cc         string `json:"cc,omitempty"`
@@ -47,9 +48,9 @@ type WebhookNotification struct {
 }
 
 type SlackNotification struct {
-	Authorization       string `json:"authorization"`
-	Channel             string `json:"channel"`
-	Text                string `json:"text"`
+	Authorization string `json:"authorization"`
+	Channel       string `json:"channel"`
+	Text          string `json:"text"`
 }
 
 // NotificationSpec defines the desired state of Notification
@@ -71,7 +72,6 @@ type NotificationStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	Type     NotificationType `json:"type,omitempty"`
 	EndPoint string           `json:"endpoint,omitempty"`
-	ApiKey   string           `json:"apikey,omitempty"`
 }
 
 // +kubebuilder:object:root=true
