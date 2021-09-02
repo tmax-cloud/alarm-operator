@@ -17,9 +17,8 @@ const (
 )
 
 type AlarmIngressClient struct {
-	client 	v1.IngressInterface
-	id		string
-
+	client v1.IngressInterface
+	id     string
 }
 
 func NewAlarmIngressClient(id string) (*AlarmIngressClient, error) {
@@ -29,18 +28,18 @@ func NewAlarmIngressClient(id string) (*AlarmIngressClient, error) {
 	}
 	return &AlarmIngressClient{
 		client: c,
-		id:		id,
+		id:     id,
 	}, nil
 }
 
-func (i *AlarmIngressClient)AddIngress(c chan error) error {
+func (i *AlarmIngressClient) AddIngress(c chan error) error {
 	for {
 		ing, err := i.getAlarmIngress()
 		if err != nil {
 			c <- err
 			return err
 		}
-		ip, err := checkLoadBalancer(ing)
+		ip, err := CheckLoadBalancer(ing)
 		if err == nil {
 			addNewRules(ing, ip, i.id)
 			if _, err := i.client.Update(context.Background(), ing, metav1.UpdateOptions{}); err != nil {
@@ -55,21 +54,6 @@ func (i *AlarmIngressClient)AddIngress(c chan error) error {
 	}
 	c <- nil
 	return nil
-}
-
-func (i *AlarmIngressClient) GetIp() (string, error) {
-	ip := ""
-	for {
-		ing, err := i.getAlarmIngress()
-		if err != nil {
-			return "", err
-		}
-		ip, err = checkLoadBalancer(ing)
-		if err == nil {
-			break
-		} 
-	}
-	return ip, nil
 }
 
 func newIngressClient(namespace string) (v1.IngressInterface, error) {
@@ -89,12 +73,12 @@ func (i *AlarmIngressClient) getAlarmIngress() (*networkingv1.Ingress, error) {
 	return i.client.Get(context.Background(), ingName, metav1.GetOptions{})
 }
 
-func checkLoadBalancer(ing *networkingv1.Ingress) (string, error) {
+func CheckLoadBalancer(ing *networkingv1.Ingress) (string, error) {
 	if len(ing.Status.LoadBalancer.Ingress) > 0 && ing.Status.LoadBalancer.Ingress[0].IP != "" {
 		ip := ing.Status.LoadBalancer.Ingress[0].IP
 		return ip, nil
 	}
-	return "", fmt.Errorf("alarm ingress does not have loadbalancer") 
+	return "", fmt.Errorf("alarm ingress does not have loadbalancer")
 }
 
 func addNewRules(ing *networkingv1.Ingress, ip string, id string) {
@@ -102,7 +86,7 @@ func addNewRules(ing *networkingv1.Ingress, ip string, id string) {
 	targetHost := id + "." + ip + ".nip.io"
 	defaultHost := "waiting.for.loadbalancer"
 	newRules := []networkingv1.IngressRule{}
-	for _, rule := range ing.Spec.Rules{
+	for _, rule := range ing.Spec.Rules {
 		if rule.Host != targetHost && rule.Host != defaultHost {
 			newRules = append(newRules, rule)
 		}
@@ -115,12 +99,12 @@ func addNewRules(ing *networkingv1.Ingress, ip string, id string) {
 					{
 						Path:     "/",
 						PathType: &prefixPathType,
-						Backend:  networkingv1.IngressBackend{
+						Backend: networkingv1.IngressBackend{
 							Service: &networkingv1.IngressServiceBackend{
 								Name: "alarm-operator-notifier",
 								Port: networkingv1.ServiceBackendPort{
 									Number: 8080,
-								},	
+								},
 							},
 						},
 					},

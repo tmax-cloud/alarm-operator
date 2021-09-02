@@ -38,6 +38,8 @@ import (
 	"github.com/tmax-cloud/alarm-operator/pkg/notification"
 	"github.com/tmax-cloud/alarm-operator/pkg/notification/ingress"
 	notifiercli "github.com/tmax-cloud/alarm-operator/pkg/notifier/client"
+	networkingv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const requeueDuration = time.Second * 3
@@ -61,7 +63,7 @@ type NotificationReconciler struct {
 // +kubebuilder:rbac:groups=alarm.tmax.io,resources=notifications/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=alarm.tmax.io,resources=smtpconfigs,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=alarm.tmax.io,resources=smtpconfigs/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;
 
@@ -100,7 +102,34 @@ func (r *NotificationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	defer resp.Body.Close()
 	logger.Info("Registered ", "name", o.Name, "type", notiType, "apikey", dat)
 
-	o.Status.ApiKey = string(dat)
+	APISecret := &corev1.Secret{}
+	if err = r.Client.Get(ctx, types.NamespacedName{Name: o.Name + "-key-secret", Namespace: o.Namespace}, APISecret); err != nil {
+		logger.Info("No Secret exists, create new Secret")
+		APISecret = &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Secret",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      o.Name + "-key-secret",
+				Namespace: o.Namespace,
+			},
+			Type: corev1.SecretTypeOpaque,
+			Data: map[string][]byte{},
+		}
+		if err = r.Client.Create(ctx, APISecret, &client.CreateOptions{}); err != nil {
+			logger.Error(err, "Failed to Create Secret")
+			return ctrl.Result{}, err
+		}
+	}
+
+	APISecret.Data["APIKey"] = dat
+
+	if err = r.Client.Update(ctx, APISecret, &client.UpdateOptions{}); err != nil {
+		logger.Error(err, "Failed to Update Secret")
+		return ctrl.Result{}, err
+	}
+
 	if err := r.updateStatus(ctx, o); err != nil {
 		logger.Error(err, "Failed to update trigger")
 		return ctrl.Result{RequeueAfter: requeueDuration}, err
@@ -115,12 +144,16 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 
 	if o.Spec.Email.SMTPConfig != "" {
 		smtpcfg := &corev1.ConfigMap{}
+		smtpSecret := &corev1.Secret{}
+
 		// XXX: Is SMTPConfig should be in same namespace?
 		err := r.Client.Get(ctx, types.NamespacedName{Name: o.Spec.Email.SMTPConfig, Namespace: o.Namespace}, smtpcfg)
 		if err != nil {
-			if errors.IsNotFound(err) {
-				return "", nil, err
-			}
+			return "", nil, err
+		}
+
+		err = r.Client.Get(ctx, types.NamespacedName{Name: o.Spec.Email.SMTPSecret, Namespace: o.Namespace}, smtpSecret)
+		if err != nil {
 			return "", nil, err
 		}
 
@@ -132,8 +165,8 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 				Port: port,
 			},
 			SMTPAccount: notification.SMTPAccount{
-				Username: smtpcfg.Data["username"],
-				Password: smtpcfg.Data["password"],
+				Username: string(smtpSecret.Data["username"]),
+				Password: string(smtpSecret.Data["password"]),
 			},
 			MailMessage: notification.MailMessage{
 				From:    o.Spec.Email.From,
@@ -148,10 +181,10 @@ func (r *NotificationReconciler) getNotificationFromResource(ctx context.Context
 	} else if o.Spec.Slack.Channel != "" {
 		rtype = "slack"
 		ret = notification.SlackNotification{
-			Authorization:  o.Spec.Slack.Authorization,
+			Authorization: o.Spec.Slack.Authorization,
 			SlackMessage: notification.SlackMessage{
-				Channel:  o.Spec.Slack.Channel,
-				Text:     o.Spec.Slack.Text,
+				Channel: o.Spec.Slack.Channel,
+				Text:    o.Spec.Slack.Text,
 			},
 		}
 	} else {
@@ -171,26 +204,18 @@ func (r *NotificationReconciler) updateStatus(ctx context.Context, o *tmaxiov1al
 	} else {
 		o.Status.Type = tmaxiov1alpha1.NotificationTypeUnknown
 	}
-	// u, err := url.Parse(os.Getenv("NOTIFIER_URL"))
-	// if err != nil {
-	// 	return err
-	// }
-	// epHost := u.Hostname()
-	// if !IsIpv4Regex(u.Hostname()) {
-	// 	ips, _ := net.LookupIP(u.Hostname())
-	// 	for _, ip := range ips {
-	// 		epHost = ip.String()
-	// 	}
-	// }
 	id := o.Name + "-" + o.Namespace
-	ingCli, err := ingress.NewAlarmIngressClient(id)
+
+	ing := &networkingv1.Ingress{}
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: "alarm-operator-ingress", Namespace: "alarm-operator-system"}, ing); err != nil {
+		return err
+	}
+
+	ip, err := ingress.CheckLoadBalancer(ing)
 	if err != nil {
 		return err
 	}
-	ip, err := ingCli.GetIp()
-	if err != nil {
-		return err
-	}
+
 	o.Status.EndPoint = fmt.Sprintf("http://%s.%s.nip.io", id, ip)
 	r.Log.Info("Update", "Endpoint", o.Status.EndPoint, "Type", o.Status.Type)
 

@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.0.1
+VERSION ?= dev
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
 # Options for 'bundle-build'
@@ -59,6 +59,9 @@ deploy: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${MANAGER_IMG}
 	cd config/notifier && $(KUSTOMIZE) edit set image notifier=${NOTIFIER_IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+undeploy: kustomize
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen

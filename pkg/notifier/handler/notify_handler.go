@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -28,8 +29,8 @@ func NewNotificationHandler(ctx context.Context, registry *notification.Notifica
 
 func (h *notificationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
-	authkey := r.Header.Get("AuthKey")
-	h.logger.Infow("handler", "URL", r.URL, "Auth", authkey)
+	ApiKey := r.Header.Get("ApiKey")
+	h.logger.Infow("handler", "URL", r.URL, "Auth", ApiKey)
 
 	id := extractIdFromHost(r.Host)
 
@@ -41,10 +42,15 @@ func (h *notificationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if key != authkey {
+	if key != ApiKey {
 		http.Error(w, "authoriation key not match", http.StatusNotFound)
 		return
 	}
+
+	if noti, err = applyTextFromHeader(noti, r); err != nil {
+		h.logger.Error(err)
+	}
+
 	h.logger.Infow("handler", "Host", r.Host, "extracted", id, "notification", noti)
 
 	err = h.queue.Enqueue(noti)
@@ -62,4 +68,33 @@ func (h *notificationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 func extractIdFromHost(hostIn string) string {
 	id := strings.Split(hostIn, ".")[0]
 	return id
+}
+
+func applyTextFromHeader(noti notification.Notification, r *http.Request) (notification.Notification, error) {
+	payload, err := json.Marshal(noti)
+	if err != nil {
+		return noti, err
+	}
+
+	switch noti.(type) {
+	case notification.MailNotification:
+		var dat notification.MailNotification
+		if err := json.Unmarshal(payload, &dat); err != nil {
+			return noti, err
+		}
+		if body := r.Header.Get("Text"); body != "" {
+			dat.MailMessage.Body = body
+		}
+		return dat, nil
+	case notification.SlackNotification:
+		var dat notification.SlackNotification
+		if err := json.Unmarshal(payload, &dat); err != nil {
+			return noti, err
+		}
+		if text := r.Header.Get("Text"); text != "" {
+			dat.SlackMessage.Text = text
+		}
+		return dat, nil
+	}
+	return noti, fmt.Errorf("unknown type")
 }
